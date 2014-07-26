@@ -1,0 +1,4 @@
+#!/bin/bash
+
+uwsgi --plugin psgi --plugin http --http 127.0.0.1:$1 --http-modifier1 5 --psgi $2
+

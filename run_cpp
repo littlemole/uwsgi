@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#uwsgi --plugin cpp --plugin http --http 127.0.0.1:$1 --http-modifier1 250 --post-buffering 1
+
+uwsgi --plugin cpp --plugin http --http=127.0.0.1:$1 --http-modifier1=250 
+#--post-buffering=1
+

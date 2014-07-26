@@ -1,0 +1,4 @@
+#!/bin/bash
+
+uwsgi --plugin python27 --plugin http --http 127.0.0.1:$1 --wsgi-file $2
+
