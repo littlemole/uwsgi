@@ -1,16 +1,26 @@
-#include <string>
-#include "uwsgi.h"
-#include <dlfcn.h>
+#include "registry.h"
+
+extern "C" struct uwsgi_cpp ucpp;
 
 
-extern "C"  int test_request_handler(struct wsgi_request *wsgi_req) 
+extern "C"  int test_request_handler(Request& req, Response& res) 
 {
-	if (uwsgi_parse_vars(wsgi_req)) {
-        return -1;
-    }
+    std::string body = req.body();
+    res.status("200 OK");
+    res.header("Content-type", "text/plain");
+    res.body("HELLO WORLD\r\n");
+    res.body(body);
+    res.body("\r\n");    
+    res.body(req.querystring());
+    res.body("\r\n");    
+    res.body(req.path());
+    res.body("\r\n");    
+    auto params = req.queryParams();
+    res.body(params.get("key a"));
+    res.body("\r\n");      
+    return res.ok();
 
-
-    ssize_t len = 0;
+/*    ssize_t len = 0;
     char* body = uwsgi_request_body_read(wsgi_req, 4096 , &len);
     uwsgi_response_prepare_headers(wsgi_req, "200 OK", 6);
     uwsgi_response_add_header(wsgi_req, "Content-type", 12, "text/plain", 10);
@@ -39,6 +49,7 @@ extern "C"  int test_request_handler(struct wsgi_request *wsgi_req)
     uwsgi_response_write_body_do(wsgi_req, body, len);
     uwsgi_response_write_body_do(wsgi_req, wsgi_req->buffer, wsgi_req->uh->pktsize);
     return UWSGI_OK;
+    */
 }
 
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+g++ $(uwsgi --cflags) -Wno-write-strings   --shared cpp_plugin.c -o cpp_plugin.so 

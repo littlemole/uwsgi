@@ -1,0 +1,3 @@
+#!/bin/bash
+
+g++ $(uwsgi --cflags) -Wno-write-strings   --shared test_mod.cpp -o test_mod.so 
