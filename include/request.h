@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "queryparams.h"
+#include "arg.h"
 
 class Request
 {
@@ -27,9 +28,26 @@ public:
     boost::any attr( const std::string& key );
     bool hasAttr( const std::string& key );
     
+    void set_pathargs(const patharguments_t& args)
+    {
+        args_ = args;
+    }
+    
+    patharguments_t path_info()
+    {
+        return args_;
+    }
+    
+    
+    Args args()
+    {
+        return Args(args_);
+    }
+    
 private:
     wsgi_request* r_; 
     std::map<std::string,boost::any> attrs_;
+    patharguments_t args_;
 };
 
 

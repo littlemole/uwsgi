@@ -1,5 +1,38 @@
 
 #include "registry.h"
+#include <dirent.h> 
+#include <stdio.h> 
+#include "processor.h"
+
+typedef int (*handler_t)(Processor* proc);
+
+std::vector<std::string> glob(const std::string& f)
+{
+  DIR           *d;
+  struct dirent *dir;
+  
+  std::vector<std::string> result;
+  
+  uwsgi_log("glob dir %s\n", f.c_str()); 
+  d = opendir(f.c_str());
+  if (d)
+  {
+    while ((dir = readdir(d)) != NULL)
+    {
+        uwsgi_log("glob %s\n", dir->d_name); 
+        if (dir->d_type == DT_REG)
+        {   
+            std::string n = std::string(dir->d_name);
+            if ( n != "." && n != "..")
+            {
+                result.push_back(dir->d_name);
+            }
+        }
+    }
+    closedir(d);
+  }
+  return result;
+}
 
 Registry::~Registry()
 {
@@ -9,46 +42,29 @@ Registry::~Registry()
     }
 }
 
-handler_t Registry::get(const std::string& name)
+int Registry::load()
 {
-    uwsgi_log("get handler: %s\n", name.c_str());    
+    uwsgi_log("Registry::load()\n");    
     
-    if ( handlers_.count(name) == 0 )
+    std::vector<std::string> sos = glob(ucpp.modules_dir);
+    for ( size_t i = 0; i < sos.size(); i++)
     {
-        handlers_[name] = 0;
-        
-        std::ostringstream oss;
-        oss << ucpp.modules_dir << "/" << name << "_mod.so";
-        std::string soname = oss.str();
-        
-        uwsgi_log("load .so: %s\n", soname.c_str());
-        
-        void* handle = dlopen(soname.c_str(), RTLD_LAZY);
-        
-        if (handle) 
+        uwsgi_log("Registry::load() %s\n", sos[i].c_str());    
+        if ( sos[i].find(".so") != std::string::npos )
         {
-            modules_.push_back((size_t*)handle);
-            
-            dlerror();
-            
             std::ostringstream oss;
-            oss << name << "_request_handler";   
-            std::string handlername = oss.str();        
+            oss << ucpp.modules_dir << "/" << sos[i];   
+            std::string modulename = oss.str();    
+                    
+            void* handle = dlopen(modulename.c_str(), RTLD_LAZY);
             
-            uwsgi_log("load handler: %s\n", handlername.c_str()); 
-            
-            handler_t h = (handler_t) dlsym(handle,handlername.c_str());            
-            const char *dlsym_error = dlerror();
-            if (!dlsym_error && h) 
+            if (handle) 
             {
-                 uwsgi_log("successfully loaded handler: %s\n", handlername.c_str()); 
-                 handlers_[name] = h;
-            }
+                modules_.push_back((size_t*)handle);
+            }            
         }
     }
-    
-    handler_t handler = handlers_[name];
-    return handler;
+    return 1;
 }    
 
 
@@ -58,6 +74,8 @@ Registry& registry()
     return registry;
 }
 
+
+
 int uwsgiProcessor::process(wsgi_request *wsgi_req)
 {
 	if (uwsgi_parse_vars(wsgi_req)) 
@@ -65,39 +83,11 @@ int uwsgiProcessor::process(wsgi_request *wsgi_req)
         return -1;
     }
     
-    uint16_t len = 0;
-    char* path_info = uwsgi_get_var(wsgi_req, (char *) "PATH_INFO", 9, &len);
-    if (!path_info)
-    {
-        return -1;
-    }
-
-    std::string ctx(path_info,len);
-    while (!ctx.empty() && ctx[0] == '/' ) {
-        ctx = ctx.substr(1);
-    }
+    Request  req(wsgi_req);    
+    Response res(wsgi_req);
     
-    while (!ctx.empty() && (ctx[ctx.size()-1] == '\n' || ctx[ctx.size()-1] == '\r') ) {
-        ctx = ctx.substr(0,ctx.size()-1);
-    }    
-    
-    size_t pos = ctx.find("/");
-    if ( pos != std::string::npos )
-    {
-        ctx = ctx.substr(0,pos);
-    }
-    
-    uwsgi_log("handler: %s\n", ctx.c_str());    
-    
-    handler_t handler = registry().get(ctx);
-    if (handler)
-    {
-        Request  req(wsgi_req);
-        Response res(wsgi_req);
-        int r = handler(req,res);
-        return r;    
-    }
-    return -1;
+    HttpHandler* proc = processor();
+    return proc->request_handler(req,res);
 }
 
 

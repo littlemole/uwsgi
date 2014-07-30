@@ -12,6 +12,8 @@ struct uwsgi_option uwsgi_cpp_options[] =
 static int uwsgi_cpp_init()
 {
     uwsgi_log("CPP MODULE DIR : %s\n", ucpp.modules_dir);    
+    int loader = registry().load();    
+    uwsgi_log("LOADED : %i\n", loader);    
     return 0;
 }
 

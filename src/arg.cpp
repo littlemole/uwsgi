@@ -1,32 +1,32 @@
-#include "arg.h"
+#include "request.h"
 
 
-Args::Args( const std::string& tpl, const std::string& path_info)
-{
-    std::vector<std::string> p = split(path_info,'/');
-    std::vector<std::string> t = split(tpl,'/');    
-    for ( size_t i = 0; i < t.size(); i++ )
-    {
-        const std::string& s = t[i];
-        if ( !s.empty() && i < p.size() )
-        {
-            if ( s[0] == '{' && s[s.size()-1] == '}' ) 
-            {
-                std::string key = s.substr(1,s.size()-2);
-                std::string val = p[i];
-                args_[key] = val;
-            }            
-        }
-    }
-}
+
+Args::Args( const patharguments_t& args)
+    : args_(args)
+{}
 
 std::string Args::get(const std::string& key)
 {
-    if ( args_.count(key) == 0 )
+    std::vector<std::string> entries = keys();
+    for ( size_t i = 0; i < entries.size(); i++ ) 
     {
-        return "";
+        if ( entries[i] == key )
+        {
+            return args_[i].second;
+        }
     }
-    
-    return args_[key];
+    return "";
 }
+
+std::vector<std::string> Args::keys()
+{
+    std::vector<std::string> v;
+    for ( size_t i = 0; i < args_.size(); i++ ) 
+    {
+        v.push_back( args_[i].first );
+    }
+    return v;
+}    
+
 

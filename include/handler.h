@@ -2,6 +2,10 @@
 #define _MOL_DEF_GUARD_DEFINE_MOD_HTTP_REQUEST_HANDLER_DEF_GUARD_
 #include "common.h"
 
+class Processor;
+class Request;
+class Response;
+
 class HttpHandler
 {
 public:

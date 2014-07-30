@@ -3,6 +3,8 @@
 
 #include "response.h"
 
+class Processor;
+
 extern "C" {
 
     struct uwsgi_cpp 
@@ -13,7 +15,8 @@ extern "C" {
     extern struct uwsgi_server uwsgi;
     extern struct uwsgi_cpp ucpp;
     
-    typedef int(*handler_t)(Request& req, Response& res);  
+   // typedef int(*handler_t)(Request& req, Response& res);  
+   
 }
 
 class Registry
@@ -22,11 +25,10 @@ public:
 
     ~Registry();
 
-    handler_t get(const std::string& name);
+    int load();
 
 private:
     std::vector<size_t*> modules_;
-    std::map<std::string,handler_t> handlers_;
 };
 
 Registry& registry();
