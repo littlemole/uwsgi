@@ -58,7 +58,7 @@ Registry& registry()
     return registry;
 }
 
-int Processor::process(wsgi_request *wsgi_req)
+int uwsgiProcessor::process(wsgi_request *wsgi_req)
 {
 	if (uwsgi_parse_vars(wsgi_req)) 
 	{

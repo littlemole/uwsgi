@@ -22,11 +22,11 @@ Args::Args( const std::string& tpl, const std::string& path_info)
 
 std::string Args::get(const std::string& key)
 {
-    if ( params_.count(key) == 0 )
+    if ( args_.count(key) == 0 )
     {
         return "";
     }
     
-    return params_[key];
+    return args_[key];
 }
 

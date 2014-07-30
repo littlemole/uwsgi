@@ -17,7 +17,7 @@ static int uwsgi_cpp_init()
 
 static int uwsgi_cpp_request(struct wsgi_request *wsgi_req) 
 {
-    return Processor::process(wsgi_req);
+    return uwsgiProcessor::process(wsgi_req);
 }
 
 static void uwsgi_cpp_after_request(struct wsgi_request *wsgi_req) 

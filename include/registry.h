@@ -32,7 +32,7 @@ private:
 Registry& registry();
 
 
-class Processor
+class uwsgiProcessor
 {
 public:
 
