@@ -5,6 +5,13 @@ Request::Request(wsgi_request* r)
     : r_(r)
 {}
 
+std::vector<Cookie> Request::cookies()
+{
+    std::vector<Cookie> v = Cookie::parse( get("HTTP_COOKIE") );
+    return v;
+}
+
+
 std::string Request::method() 
 {
     return get("REQUEST_METHOD");

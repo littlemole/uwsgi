@@ -1,6 +1,8 @@
 #include "processor.h"
 #include "response.h"
 #include <iostream>
+#include <memory>
+#include "boost/regex.hpp"
 
 class HandlerInfo
 {
@@ -11,10 +13,27 @@ public:
     bool match(const std::string& m, const std::string& p, patharguments_t& result);
 
     int invoke(Request& req, Response& res);
-    
+        
 private:
     std::string method_;
-    std::vector<std::string> path_;
+    boost::regex path_regex_;    
+    std::vector<std::string> args_;
+    HttpHandler* handler_;
+};
+
+class InterceptorInfo
+{
+public:
+    
+    InterceptorInfo( const std::string& m,  const std::string& p, HttpHandler* handler );
+    
+    bool match(const std::string& m, const std::string& p);
+
+    int invoke(Request& req, Response& res);
+        
+private:
+    std::string method_;
+    boost::regex path_regex_;    
     HttpHandler* handler_;
 };
    
@@ -26,68 +45,136 @@ public:
     Processor();
     
     Processor& registerHandler( const std::string& method, const std::string& path, HttpHandler* handler);
+    Processor& registerInterceptor( const std::string& method, const std::string& path, HttpHandler* handler);
 
     int request_handler( Request& req, Response& res );
-    
+    int intercept( Request& req, Response& res );
 
 private:
     std::vector<HandlerInfo> handlers_;
+    std::vector<InterceptorInfo> interceptors_;
 };
 
     
-HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) {
+HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
+{
     method_ = m;
-    path_ = split(p,'/');
     handler_ = handler;
+    
+    boost::regex r("\\{([^\\}]*)\\}");
+    boost::smatch match;
+
+    std::string::const_iterator start = p.begin();
+    std::string::const_iterator end   = p.end();    
+    
+    while (boost::regex_search (start,end,match,r)) 
+    {
+        if ( match.size() > 1 )
+        {
+            args_.push_back(match[1]);
+        }
+        start = match[0].second;
+    }
+    std::string replacement("([^/]*)");
+    std::string s = boost::regex_replace (p,r,replacement);
+    path_regex_ = boost::regex(s);//+"(.*)");
+    
 }
 
-bool HandlerInfo::match(const std::string& m, const std::string& p, patharguments_t& result) {
-
-    std::cerr << m << " ?= " << method_ << std::endl;
-    if ( m != method_ ) {
-        
+bool HandlerInfo::match(const std::string& m, const std::string& p, patharguments_t& result) 
+{
+    if ( m != method_ ) 
+    {        
+        return false;
+    }
+    
+    boost::smatch match;
+    if ( !boost::regex_match(p,match,path_regex_) )
+    {
         return false;
     }
         
     patharguments_t args;
-    std::vector<std::string> v = split(p,'/');
-    std::cerr << path_.size() << " >? " << v.size() << std::endl;
-    if ( path_.size() > v.size() ) {
-        return false;
+    
+    for ( size_t i = 0; i < args_.size(); i++)
+    {
+        args.push_back( pathargument_t(args_[i],match[i+1]) );
     }
-    for ( size_t i = 0; i < path_.size(); i++) {
-        std::cerr << path_[i] << " ?= " << v[i] << std::endl;
-        if ( !path_[i].empty() && path_[i][0] == '{' ) {
-            std::string key = path_[i];
-            std::string value = v[i];
-            args.push_back( pathargument_t(key,value) );
-            continue;
-        }
-        if ( path_[i] != v[i] ) {
-            return false;
-        }
-    }
+    
     result = args;
-    return true;      
+    return true;
 }    
 
-int HandlerInfo::invoke(Request& req, Response& res) {
+int HandlerInfo::invoke(Request& req, Response& res) 
+{
     return handler_->request_handler( req, res );
 }
 
+InterceptorInfo::InterceptorInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
+{
+    method_ = m;
+    handler_ = handler;
+    path_regex_ = boost::regex(p);
+    
+}
 
-   
+bool InterceptorInfo::match(const std::string& m, const std::string& p) 
+{
+    if ( m != method_ ) 
+    {        
+        return false;
+    }
+    
+    boost::smatch match;
+    if ( !boost::regex_match(p,match,path_regex_) )
+    {
+        return false;
+    }
+    return true;
+}    
+
+int InterceptorInfo::invoke(Request& req, Response& res) 
+{
+    return handler_->request_handler( req, res );
+}
 
 Processor::Processor() 
 {}
 
-Processor& Processor::registerHandler( const std::string& method, const std::string& path, HttpHandler* handler) {
-
+Processor& Processor::registerHandler( const std::string& method, const std::string& path, HttpHandler* handler) 
+{
     uwsgi_log("Processor::registerHandler %s, %s",method.c_str(),path.c_str());
     handlers_.push_back( HandlerInfo(method,path,handler) );    
     return *this;
 }
 
+
+Processor& Processor::registerInterceptor( const std::string& method, const std::string& path, HttpHandler* handler) 
+{
+    uwsgi_log("Processor::registerInterceptor %s, %s",method.c_str(),path.c_str());
+    interceptors_.push_back( InterceptorInfo(method,path,handler) );    
+    return *this;
+}
+
+int Processor::intercept( Request& req, Response& res ) 
+{
+    std::string method = req.method();
+    std::string path   = req.path();
+    
+    int r = UWSGI_OK;
+    for ( size_t i = 0; i < interceptors_.size(); i++)
+    {
+        if ( interceptors_[i].match(method,path) )
+        {
+            r = interceptors_[i].invoke(req,res);
+            if ( res.isDone() )
+            {
+                return r;
+            }
+        }
+    }
+    return r;
+}
 
 int Processor::request_handler( Request& req, Response& res ) 
 {
@@ -95,17 +182,24 @@ int Processor::request_handler( Request& req, Response& res )
     std::string path   = req.path();
   
     uwsgi_log("request_handler %s %s %i\n", method.c_str(), path.c_str(), handlers_.size()); 
-//    std::cerr << "request_handler" << method << " " << path << " " << handlers_.size() << std::endl;
-
     for ( size_t i = 0; i < handlers_.size(); i++) {
     
         uwsgi_log("%s %s", method.c_str(), path.c_str() );
-        //std::cerr << method << " " << path << std::endl;
         patharguments_t args;
         if ( handlers_[i].match( method, path, args) ) {
-            uwsgi_log("MATCH\n");
+        
             req.set_pathargs(args);
-            return handlers_[i].invoke(req,res);
+            
+            int r = intercept(req,res);
+            if ( res.isDone() )
+            {
+                res.flush();
+                return r;
+            }
+            
+            r = handlers_[i].invoke(req,res);
+            res.flush();
+            return r;
         }
     }
     
@@ -125,4 +219,9 @@ HttpHandler::HttpHandler(const std::string& m, const std::string& p)
     proc->registerHandler(m,p,this);             
 }
 
+HttpInterceptor::HttpInterceptor(const std::string& m, const std::string& p)
+{
+    Processor* proc = (Processor*)processor();
+    proc->registerInterceptor(m,p,this);             
+}
 

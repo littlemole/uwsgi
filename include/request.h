@@ -4,6 +4,7 @@
 #include "common.h"
 #include "queryparams.h"
 #include "arg.h"
+#include "cookie.h"
 
 class Request
 {
@@ -15,6 +16,7 @@ public:
     
     QueryParams queryParams();
     Args args();
+    std::vector<Cookie> cookies();
 
     std::string body();
 
@@ -26,7 +28,7 @@ public:
     std::string path(); 
     std::string querystring();
     
-    std::string get(const std::string& key);
+    std::string get(const std::string& key);    
     
     void attr( const std::string& key, boost::any& a );
     boost::any attr( const std::string& key );

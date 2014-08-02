@@ -6,10 +6,9 @@
 
 //static auto handler = Get( "/test/{var}", [] ( Request& req, Response& res ) {
 
-GET("/test/{var}")(
+GET("/test2/{var}")(
 []( Request& req, Response& res ) {
 
-    res.status("200 OK");
     res.header("Content-type", "text/plain");
     
     res.body("HELLO2 WORLD\r\n");
@@ -27,10 +26,17 @@ GET("/test/{var}")(
     res.body("\r\n");    
     
     auto args = req.args();
-    res.body(args.get("{var}"));
+    res.body(args.get("var"));
     res.body("\r\n");    
     
     return res.ok();            
 });
+
+
+
+auto captor = interceptor("GET","/test/admin2", [] (Request& req, Response& res) {
+        return res.done().status("404 not found");
+});
+
 
 

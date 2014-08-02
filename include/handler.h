@@ -15,8 +15,15 @@ public:
     HttpHandler(const std::string& m, const std::string& p);
 
     virtual int request_handler( Request& req, Response& res )  = 0;
+    
 }; 
 
+class HttpInterceptor : public HttpHandler
+{
+public:
+
+    HttpInterceptor(const std::string& m, const std::string& p);
+};
 
 template<class T>
 class GenericHandler : public HttpHandler
@@ -35,11 +42,13 @@ private:
     T t_;
 };
 
+
 class HandlerBuilder
 {
 public:
     HandlerBuilder()
-    {}
+    {
+    }
     
     HandlerBuilder(const std::string& p)
         : path_(p)
@@ -56,8 +65,8 @@ public:
     {
         method_ = m;
         return *this;
-    }
-    
+    }  
+       
     template<class T>
     GenericHandler<T> handle(T t)
     {
@@ -67,7 +76,7 @@ public:
     template<class T>
     GenericHandler<T> operator()(T t)
     {
-        return GenericHandler<T>(method_,path_,t);
+        return handle(t);
     }
         
 protected:
@@ -110,6 +119,32 @@ public:
         method("DELETE");
     }    
 };
+
+
+
+template<class T>
+class GenericInterceptor : public HttpInterceptor
+{
+public:
+    GenericInterceptor( const std::string& m, const std::string& p, T t ) 
+        : HttpInterceptor(m,p), t_(t)
+    {}    
+    
+    int request_handler( Request& req, Response& res ) 
+    {    
+        return t_(req,res);
+    }
+    
+private:
+    T t_;
+};
+
+template<class T>
+GenericInterceptor<T> interceptor(const std::string& m, const std::string& p, T t)
+{
+    return GenericInterceptor<T>(m,p,t);
+}
+
 
 #endif
 

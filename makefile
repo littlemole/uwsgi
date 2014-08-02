@@ -42,8 +42,8 @@ APXSLIBS = $(shell apxs -q LDFLAGS)
 HIREDISLIBS = $(shell pkg-config --libs hiredis)
 # library flags
 DEPS = $(JSONCPPLIBS) $(APXSLIBS) $(HIREDISLIBS) -lpthread 
-LIBS =  $(DEPS) -shared -lcurl
-TEST_LIBS = -lgtest $(DEPS) -lapr-1 -laprutil-1 
+LIBS =  $(DEPS) -shared -lcurl -lboost_regex
+TEST_LIBS = -lgtest $(DEPS) 
 
 #################################################
 # source and build path information
