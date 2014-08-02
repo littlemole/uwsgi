@@ -94,3 +94,20 @@ QueryParams Request::queryParams()
     return QueryParams(querystring());
 }
 
+void Request::set_pathargs(const patharguments_t& args)
+{
+    args_ = args;
+}
+
+patharguments_t Request::path_info()
+{
+    return args_;
+}
+
+
+Args Request::args()
+{
+    return Args(args_);
+}
+
+

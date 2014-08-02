@@ -12,37 +12,28 @@ public:
     Request(wsgi_request* wsgi_req);
         
     std::string method();
-    std::string content_type();
-    size_t content_length();
+    
+    QueryParams queryParams();
+    Args args();
+
+    std::string body();
+
     std::string accept();
+    std::string content_type();
+    size_t content_length();    
+
     std::string url(); 
     std::string path(); 
     std::string querystring();
-    std::string body();
     
     std::string get(const std::string& key);
     
-    QueryParams queryParams();
-        
     void attr( const std::string& key, boost::any& a );
     boost::any attr( const std::string& key );
     bool hasAttr( const std::string& key );
     
-    void set_pathargs(const patharguments_t& args)
-    {
-        args_ = args;
-    }
-    
-    patharguments_t path_info()
-    {
-        return args_;
-    }
-    
-    
-    Args args()
-    {
-        return Args(args_);
-    }
+    void set_pathargs(const patharguments_t& args);
+    patharguments_t path_info();
     
 private:
     wsgi_request* r_; 
