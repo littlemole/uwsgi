@@ -1,13 +1,16 @@
 #include "handler.h"
 #include "response.h"
-#define HTTPHANDLER(h,l) h##l
-#define POST(p) static auto HTTPHANDLER(handler,__LINE__) = Post(p)
-#define GET(p) static auto HTTPHANDLER(handler,__LINE__) = Get(p)
 
-//static auto handler = Get( "/test/{var}", [] ( Request& req, Response& res ) {
+#define PASTE2(x,y) x##y
+#define PASTE(x,y) PASTE2(x,y)
+#define GET static auto PASTE(handler,__LINE__) = Get
+#define POST static auto PASTE(handler,__LINE__) = Post
+#define PUT static auto PASTE(handler,__LINE__) = Put
+#define DELETE static auto PASTE(handler,__LINE__) = Delete
+#define INTERCEPTOR static auto PASTE(handler,__LINE__) = interceptor
 
-GET("/test2/{var}")(
-[]( Request& req, Response& res ) {
+GET( "/test2/{var}")(
+[] ( Request& req, Response& res ) {
 
     res.header("Content-type", "text/plain");
     
@@ -33,8 +36,16 @@ GET("/test2/{var}")(
 });
 
 
+GET("/")(
+[]( Request& req, Response& res ) {
 
-auto captor = interceptor("GET","/test/admin2", [] (Request& req, Response& res) {
+    res.header("Content-type", "text/plain");    
+    res.body("ROOT\r\n");    
+    return res.ok();            
+});
+
+INTERCEPTOR("GET","/test/admin2", 
+[] (Request& req, Response& res) {
         return res.done().status("404 not found");
 });
 

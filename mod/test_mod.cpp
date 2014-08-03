@@ -7,7 +7,7 @@ class Handler : public HttpHandler
 {
 public:
 
-    Handler() : HttpHandler("GET","/test/")
+    Handler() : HttpHandler("GET","/test/.*")
     {}
     
     int request_handler( Request& req, Response& res ) 
@@ -36,6 +36,10 @@ public:
             res.body(c.name());
             res.body(":");
             res.body(c.value());
+            res.body(":");
+            res.body(c.path());            
+            res.body(":");
+            res.body(c.domain());            
             res.body("\r\n");    
             res.cookie(c);
         } 
@@ -53,7 +57,7 @@ class Interceptor : public HttpInterceptor
 {
 public:
 
-    Interceptor() : HttpInterceptor("GET","/test/admin.*")
+    Interceptor() : HttpInterceptor("GET","/test/admin")
     {}
     
     int request_handler( Request& req, Response& res ) 

@@ -127,7 +127,7 @@ Cookie Cookie::parseCookie(const std::string& txt)
             continue;
         }
         
-        std::vector<std::string> n = split(v[0],'=');
+        std::vector<std::string> n = split(s,'=');
         if ( n.empty() )
         {
             continue;

@@ -1,59 +1,10 @@
-#include "processor.h"
 #include "response.h"
+#include "processor.h"
 #include <iostream>
 #include <memory>
-#include "boost/regex.hpp"
 
-class HandlerInfo
-{
-public:
-    
-    HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler );
-    
-    bool match(const std::string& m, const std::string& p, patharguments_t& result);
 
-    int invoke(Request& req, Response& res);
-        
-private:
-    std::string method_;
-    boost::regex path_regex_;    
-    std::vector<std::string> args_;
-    HttpHandler* handler_;
-};
 
-class InterceptorInfo
-{
-public:
-    
-    InterceptorInfo( const std::string& m,  const std::string& p, HttpHandler* handler );
-    
-    bool match(const std::string& m, const std::string& p);
-
-    int invoke(Request& req, Response& res);
-        
-private:
-    std::string method_;
-    boost::regex path_regex_;    
-    HttpHandler* handler_;
-};
-   
-   
-class Processor : public HttpHandler
-{
-public:
-
-    Processor();
-    
-    Processor& registerHandler( const std::string& method, const std::string& path, HttpHandler* handler);
-    Processor& registerInterceptor( const std::string& method, const std::string& path, HttpHandler* handler);
-
-    int request_handler( Request& req, Response& res );
-    int intercept( Request& req, Response& res );
-
-private:
-    std::vector<HandlerInfo> handlers_;
-    std::vector<InterceptorInfo> interceptors_;
-};
 
     
 HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
@@ -77,7 +28,7 @@ HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandl
     }
     std::string replacement("([^/]*)");
     std::string s = boost::regex_replace (p,r,replacement);
-    path_regex_ = boost::regex(s);//+"(.*)");
+    path_regex_ = boost::regex(s);
     
 }
 
@@ -143,7 +94,7 @@ Processor::Processor()
 
 Processor& Processor::registerHandler( const std::string& method, const std::string& path, HttpHandler* handler) 
 {
-    uwsgi_log("Processor::registerHandler %s, %s",method.c_str(),path.c_str());
+    uwsgi_log("Processor::registerHandler %s, %s\r\n",method.c_str(),path.c_str());
     handlers_.push_back( HandlerInfo(method,path,handler) );    
     return *this;
 }
@@ -151,7 +102,7 @@ Processor& Processor::registerHandler( const std::string& method, const std::str
 
 Processor& Processor::registerInterceptor( const std::string& method, const std::string& path, HttpHandler* handler) 
 {
-    uwsgi_log("Processor::registerInterceptor %s, %s",method.c_str(),path.c_str());
+    uwsgi_log("Processor::registerInterceptor %s, %s\r\n",method.c_str(),path.c_str());
     interceptors_.push_back( InterceptorInfo(method,path,handler) );    
     return *this;
 }

@@ -61,9 +61,10 @@ std::string Request::body()
 {
     std::ostringstream oss;
     ssize_t size = 4096;
-    ssize_t len = 0;
+    ssize_t len = 4096;
     while( len == size)
     {
+        len = 0;
         char* body = uwsgi_request_body_read(r_, size , &len);
         if ( body )
         {

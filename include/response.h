@@ -2,8 +2,7 @@
 #define _MOL_DEF_GUARD_DEFINE_MOD_HTTP_RESPONSE_DEF_GUARD_
 #include "request.h"
 
-typedef std::pair<std::string,std::string> header_t;
-typedef std::vector<header_t> headers_t;
+
 
 class Response
 {

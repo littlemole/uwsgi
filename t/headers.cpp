@@ -1,0 +1,70 @@
+#include "request.h"
+#include "processor.h"
+#include "gtest/gtest.h"
+
+extern std::map<std::string,std::string> wsgi_mock;
+extern std::string wsgi_body_mock;
+
+namespace {
+
+
+class HeadersTest : public ::testing::Test {
+ protected:
+
+
+  virtual void SetUp() {
+  }
+
+  virtual void TearDown() {
+  }
+   
+}; // end test setup
+
+
+TEST_F(HeadersTest, simpleRequest) {
+
+    wsgi_mock.clear();
+    wsgi_mock["REQUEST_METHOD"] = "GET";
+    wsgi_mock["PATH_INFO"] = "/context/test";
+    wsgi_mock["QUERY_STRING"] = "a=b&c=d";    
+
+    wsgi_request r;
+    
+    Request req(&r);
+    
+    EXPECT_EQ("GET",req.method());
+    EXPECT_EQ("/context/test",req.path());
+    EXPECT_EQ("a=b&c=d",req.querystring());
+    EXPECT_EQ("b",req.queryParams().get("a"));
+    EXPECT_EQ("d",req.queryParams().get("c"));        
+}
+
+
+TEST_F(HeadersTest, simplePostRequest) {
+
+    wsgi_mock.clear();
+    wsgi_mock["REQUEST_METHOD"] = "POST";
+    wsgi_mock["PATH_INFO"] = "/context/test";
+    wsgi_mock["QUERY_STRING"] = "a=b&c=d";    
+    wsgi_mock["CONTENT_TYPE"] = "text/plain"; 
+        
+    wsgi_body_mock = "a=b&c=d";
+    
+    wsgi_request r;
+    
+    Request req(&r);
+    
+    EXPECT_EQ("POST",req.method());
+    EXPECT_EQ("/context/test",req.path());
+    EXPECT_EQ("a=b&c=d",req.querystring());
+    EXPECT_EQ("text/plain",req.content_type());
+    EXPECT_EQ("a=b&c=d",req.body());
+    
+    QueryParams qp(req.body());
+    EXPECT_EQ("b",qp.get("a"));
+    EXPECT_EQ("d",qp.get("c"));
+}
+
+}  // namespace
+
+

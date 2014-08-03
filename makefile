@@ -43,7 +43,7 @@ HIREDISLIBS = $(shell pkg-config --libs hiredis)
 # library flags
 DEPS = $(JSONCPPLIBS) $(APXSLIBS) $(HIREDISLIBS) -lpthread 
 LIBS =  $(DEPS) -shared -lcurl -lboost_regex
-TEST_LIBS = -lgtest $(DEPS) 
+TEST_LIBS = -lgtest $(DEPS) -lcurl -lboost_regex -ldl
 
 #################################################
 # source and build path information
@@ -129,7 +129,7 @@ $(MOD): $(PLUGIN) $(MOD_OBJFILES)
 
 
 $(BIN): $(MOD) $(TEST_OBJFILES) 
-	$(CC) $(TEST_OBJFILES) $(TEST_LIBS) -o $(BIN) 
+	$(CC) $(PLUGIN_OBJFILES) $(TEST_OBJFILES) $(TEST_LIBS) -o $(BIN) 
 		
 
 
