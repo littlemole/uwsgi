@@ -21,7 +21,7 @@ public:
 class HttpInterceptor : public HttpHandler
 {
 public:
-
+    HttpInterceptor() {}
     HttpInterceptor(const std::string& m, const std::string& p);
 };
 

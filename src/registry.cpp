@@ -4,35 +4,20 @@
 #include <stdio.h> 
 #include "processor.h"
 
+//extern "C" {
+
+//    struct uwsgi_cpp 
+//    {
+//        char *modules_dir;
+//    };  
+
+//    extern struct uwsgi_server uwsgi;
+  //  extern struct uwsgi_cpp ucpp;
+    
+//}
+
 typedef int (*handler_t)(Processor* proc);
 
-std::vector<std::string> glob(const std::string& f)
-{
-  DIR           *d;
-  struct dirent *dir;
-  
-  std::vector<std::string> result;
-  
-  uwsgi_log("glob dir %s\n", f.c_str()); 
-  d = opendir(f.c_str());
-  if (d)
-  {
-    while ((dir = readdir(d)) != NULL)
-    {
-        uwsgi_log("glob %s\n", dir->d_name); 
-        if (dir->d_type == DT_REG)
-        {   
-            std::string n = std::string(dir->d_name);
-            if ( n != "." && n != "..")
-            {
-                result.push_back(dir->d_name);
-            }
-        }
-    }
-    closedir(d);
-  }
-  return result;
-}
 
 Registry::~Registry()
 {

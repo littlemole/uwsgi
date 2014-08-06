@@ -47,9 +47,11 @@ public:
     Processor& registerInterceptor( const std::string& method, const std::string& path, HttpHandler* handler);
 
     int request_handler( Request& req, Response& res );
-    int intercept( Request& req, Response& res );
 
 private:
+
+    int intercept( Request& req, Response& res );
+
     std::vector<HandlerInfo> handlers_;
     std::vector<InterceptorInfo> interceptors_;
 };

@@ -1,8 +1,9 @@
 
 #include "registry.h"
 
-struct uwsgi_cpp ucpp;  
-  
+
+struct uwsgi_cpp  ucpp;  
+    
 struct uwsgi_option uwsgi_cpp_options[] = 
 {
     {"cpp-dir", required_argument, 0, "directory for modules", uwsgi_opt_set_str, &ucpp.modules_dir, 0 },

@@ -22,12 +22,8 @@ release : override DEBUG = -O3
 # include and dependency information
 #################################################
 
-# include dependencies
-JSONCPP = $(shell pkg-config --cflags jsoncpp)
-HIREDIS = $(shell pkg-config --cflags hiredis)
-
 # includes
-INCLUDE = -I./include $(JSONCPP) $(HIREDIS)
+INCLUDE = -I./include
 
 #options
 OPTIONS = -std=c++11 -fpic -Wno-write-strings -pthread 
@@ -36,14 +32,10 @@ OPTIONS = -std=c++11 -fpic -Wno-write-strings -pthread
 CPPFLAGS = -Wall $(DEBUG) $(REENTRANT) $(INCLUDE) $(OPTIONS)
 TESTFLAGS = -g
 
-# library dependencies
-JSONCPPLIBS = $(shell pkg-config --libs jsoncpp)
-APXSLIBS = $(shell apxs -q LDFLAGS)
-HIREDISLIBS = $(shell pkg-config --libs hiredis)
 # library flags
-DEPS = $(JSONCPPLIBS) $(APXSLIBS) $(HIREDISLIBS) -lpthread 
-LIBS =  $(DEPS) -shared -lcurl -lboost_regex
-TEST_LIBS = -lgtest $(DEPS) -lcurl -lboost_regex -ldl
+DEPS = -lpthread -lcurl -lboost_regex -lb64
+LIBS =  $(DEPS) -shared 
+TEST_LIBS = -lgtest $(DEPS) -ldl
 
 #################################################
 # source and build path information
@@ -96,7 +88,17 @@ TEST_OBJFILES = $(TEST_SRCFILES:%.cpp=$(TEST_BUILD)/%.o)
 all: $(UWSGIH) $(MOD) 
 
 #################################################
+# release rule 
+#################################################
+
+release: all
+
+#################################################
 # actual build rules
+#################################################
+
+#################################################
+# generate the uwsgi header file
 #################################################
 
 $(UWSGIH):
@@ -116,9 +118,8 @@ $(MOD_BUILD)/%.o: $(MOD_SRC)/%.cpp
 	$(CC) -c $^ -o $@ $(CPPFLAGS) 
 	
 
-
 #################################################
-# rule to compile the artifacts from .o files
+# rules to compile the artifacts from .o files
 #################################################
 
 $(PLUGIN): $(UWSGIH) $(PLUGIN_OBJFILES)
@@ -127,12 +128,9 @@ $(PLUGIN): $(UWSGIH) $(PLUGIN_OBJFILES)
 $(MOD): $(PLUGIN) $(MOD_OBJFILES) 
 	$(CC) $(MOD_OBJFILES) $(LIBS) -o $(MOD) 
 
-
 $(BIN): $(MOD) $(TEST_OBJFILES) 
 	$(CC) $(PLUGIN_OBJFILES) $(TEST_OBJFILES) $(TEST_LIBS) -o $(BIN) 
 		
-
-
 #################################################
 # make clean
 #################################################
@@ -169,10 +167,9 @@ debug: $(BIN)
 	
 	
 #################################################
-# release rule 
+# make run runs a local uwsgi server
+# ready for local testing
 #################################################
-
-release: all
 	
 run : $(MOD)
 	$(UWSGI) --plugin-dir=$(shell pwd)/ --plugin cpp --cpp-dir=$(shell pwd)/ --plugin http --http=127.0.0.1:3032 --http-modifier1=250

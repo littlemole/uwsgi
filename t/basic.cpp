@@ -1,7 +1,9 @@
 #include "common.h"
 #include "gtest/gtest.h"
 #include <sstream>
-
+#include <vector>
+#include <string>
+#include "base64.h"
 // uwsgi mocks
 
 std::map<std::string,std::string> wsgi_mock;
@@ -97,6 +99,29 @@ TEST_F(BasicTest, TestClassesCompile) {
     EXPECT_EQ("bla",v[0]);
     EXPECT_EQ("blub",v[1]);
     EXPECT_EQ("wupp",v[2]);
+}
+
+
+TEST_F(BasicTest, Base64Test) {
+
+    std::string input = "/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/";
+    std::string b64 = Base64::encode(input);
+    EXPECT_EQ("L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1cHAv",b64);
+    
+    b64 = Base64::encode(input,false);
+    EXPECT_EQ("L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1\ncHAv",b64);    
+}
+
+
+TEST_F(BasicTest, Base64decodeTest) {
+
+    std::string input = "L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwLw==";
+    std::string plain = Base64::decode(input);
+    EXPECT_EQ("/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/",plain);
+    
+    input = "L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1\ncHAv";
+    plain = Base64::decode(input);
+    EXPECT_EQ("/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/",plain);    
 }
 
 }  // namespace

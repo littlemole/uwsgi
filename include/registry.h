@@ -1,9 +1,8 @@
 #ifndef DEFINE_MOL_UWSGI_REGISTRY_DEFINE_
 #define DEFINE_MOL_UWSGI_REGISTRY_DEFINE_
 
-#include "response.h"
-
-class Processor;
+//#include "response.h"
+#include "common.h"
 
 extern "C" {
 
@@ -12,12 +11,11 @@ extern "C" {
         char *modules_dir;
     };  
 
-    extern struct uwsgi_server uwsgi;
     extern struct uwsgi_cpp ucpp;
     
-   // typedef int(*handler_t)(Request& req, Response& res);  
-   
 }
+
+//class Processor;
 
 class Registry
 {

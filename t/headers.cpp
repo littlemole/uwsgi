@@ -65,6 +65,28 @@ TEST_F(HeadersTest, simplePostRequest) {
     EXPECT_EQ("d",qp.get("c"));
 }
 
+TEST_F(HeadersTest, simpleHandlerInfoTest) {
+    
+    HandlerInfo info("GET","/context/{arg}",0);
+
+    patharguments_t result;
+    bool b = info.match("GET","/context/test",result);           
+    
+    EXPECT_EQ(true,b);
+    EXPECT_EQ(result[0].first,"arg");
+    EXPECT_EQ(result[0].second,"test");
+}
+
+TEST_F(HeadersTest, simpleInterceptorInfoTest) {
+    
+    InterceptorInfo info("GET","/context/test.*",0);
+
+    bool b = info.match("GET","/context/test/blabla");           
+    
+    EXPECT_EQ(true,b);
+}
+
+
 }  // namespace
 
 

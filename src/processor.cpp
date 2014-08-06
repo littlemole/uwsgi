@@ -3,9 +3,6 @@
 #include <iostream>
 #include <memory>
 
-
-
-
     
 HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
 {
