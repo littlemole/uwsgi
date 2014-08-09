@@ -1,5 +1,6 @@
 #include "registry.h"
 #include "processor.h"
+#include "response.h"
 
 extern "C" struct uwsgi_cpp ucpp;
 

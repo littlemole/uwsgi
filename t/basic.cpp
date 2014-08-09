@@ -108,8 +108,6 @@ TEST_F(BasicTest, Base64Test) {
     std::string b64 = Base64::encode(input);
     EXPECT_EQ("L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1cHAv",b64);
     
-    b64 = Base64::encode(input,false);
-    EXPECT_EQ("L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1\ncHAv",b64);    
 }
 
 
@@ -119,9 +117,6 @@ TEST_F(BasicTest, Base64decodeTest) {
     std::string plain = Base64::decode(input);
     EXPECT_EQ("/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/",plain);
     
-    input = "L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1\ncHAv";
-    plain = Base64::decode(input);
-    EXPECT_EQ("/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/",plain);    
 }
 
 }  // namespace

@@ -35,7 +35,7 @@ TESTFLAGS = -g
 # library flags
 DEPS = -lpthread -lcurl -lboost_regex -lb64
 LIBS =  $(DEPS) -shared 
-TEST_LIBS = -lgtest $(DEPS) -ldl
+TEST_LIBS = -lgtest $(DEPS) -ldl -lssl -lcrypto
 
 #################################################
 # source and build path information

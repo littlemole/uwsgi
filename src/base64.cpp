@@ -1,8 +1,80 @@
 #include "base64.h"
 #include <iostream>
-#include "b64/encode.h"
-#include "b64/decode.h"
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <string.h>
+#include <stdio.h>
+ 
+//Calculates the length of a decoded base64 string
+int calcDecodeLength(const char* b64input) 
+{ 
+    int len = strlen(b64input);
+    int padding = 0;
+     
+    if (b64input[len-1] == '=' && b64input[len-2] == '=') 
+        padding = 2;
+    else if (b64input[len-1] == '=') 
+        padding = 1;
+     
+    return (int)len*0.75 - padding;
+}
 
+std::string Base64::decode(const std::string& s)
+{
+    int decodeLen = calcDecodeLength(s.c_str());
+    char* buffer = (char*)malloc(decodeLen+1);
+    FILE* stream = fmemopen((char*)s.c_str(), s.size(), "r");
+     
+    BIO* b64 = BIO_new(BIO_f_base64());
+    BIO* bio = BIO_new_fp(stream, BIO_NOCLOSE);
+    bio = BIO_push(b64, bio);
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); 
+    int len = BIO_read(bio, buffer, s.size());
+    buffer[len] = '\0';
+     
+    BIO_free_all(bio);
+    fclose(stream);
+    std::string result(buffer,len);
+    free(buffer);
+    return result;
+}
+
+std::string Base64::decode(const char* s)
+{
+    return decode( std::string(s) );
+}
+
+std::string Base64::encode(const std::string& s, bool singleline)
+{
+    const char* message = s.c_str();
+    char* buffer = 0;
+    
+    BIO *bio, *b64;
+    FILE* stream;
+    int encodedSize = 4*ceil((double)strlen(message)/3);
+    buffer = (char *)malloc(encodedSize+1);
+     
+    stream = fmemopen(buffer, encodedSize+1, "w");
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_fp(stream, BIO_NOCLOSE);
+    bio = BIO_push(b64, bio);
+    if (singleline)
+        BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); 
+    BIO_write(bio, message, strlen(message));
+    BIO_flush(bio);
+    BIO_free_all(bio);
+    fclose(stream);
+    std::string result(buffer,encodedSize);
+    free(buffer);
+    return result;
+}
+
+std::string Base64::encode(const char* s, size_t len, bool singleline)
+{
+    return encode( std::string(s,len),singleline );
+}    
+
+/*
 std::string Base64::decode(const std::string& s)
 {
     base64::decoder E;
@@ -54,4 +126,5 @@ std::string Base64::encode(const char* s, size_t len, bool singleline)
     return encode( std::string(s,len),singleline );
 }    
 
+*/
 
