@@ -33,6 +33,8 @@ public:
     headers_t headers();
     bool isDone();
     
+    void ws_send(const std::string& s);
+    
 private:
     wsgi_request* r_; 
     std::string status_;
@@ -41,6 +43,12 @@ private:
     bool done_;
     std::vector<Cookie> cookies_;
 };
+
+inline Response& operator<<(Response& lhs, const std::string& rhs)
+{
+    lhs.body(rhs);
+    return lhs;
+}
 
 
 #endif

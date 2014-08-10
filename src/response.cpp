@@ -160,3 +160,11 @@ bool Response::isDone()
     return done_;
 }
 
+void Response::ws_send(const std::string& s)
+{
+    //int ret = 
+    uwsgi_websocket_send(r_, (char*)s.c_str(), s.size() );
+}
+
+
+

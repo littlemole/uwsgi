@@ -37,6 +37,9 @@ public:
     void set_pathargs(const patharguments_t& args);
     patharguments_t path_info();
     
+    void ws_handshake();
+    std::string ws_recv();
+    
 private:
     wsgi_request* r_; 
     std::map<std::string,boost::any> attrs_;

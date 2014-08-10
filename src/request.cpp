@@ -118,4 +118,31 @@ Args Request::args()
     return Args(args_);
 }
 
+void Request::ws_handshake()
+{
+    std::string ws_key = get("HTTP_SEC_WEBSOCKET_KEY");
+    std::string ws_origin = get("HTTP_ORIGIN");
+//    std::string ws_proto = "websocket_handshake";
+    
+    //int ret = 
+    uwsgi_websocket_handshake(
+                r_, 
+                (char*)ws_key.c_str(), ws_key.size(), 
+                (char*)ws_origin.c_str(), ws_origin.size() 
+//                (char*)ws_proto.c_str(), ws_proto.size()
+    );   
+}
 
+std::string Request::ws_recv()
+{
+    uwsgi_buffer* ub = uwsgi_websocket_recv(r_);
+    if(!ub)
+    {
+        std::cerr << "no ws msg recvd" << std::endl;
+        return "";
+    }
+    std::string result(ub->buf, ub->pos);
+    std::cerr << result << std::endl;
+    uwsgi_buffer_destroy(ub);
+    return result;
+}

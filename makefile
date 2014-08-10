@@ -172,5 +172,5 @@ debug: $(BIN)
 #################################################
 	
 run : $(MOD)
-	$(UWSGI) --plugin-dir=$(shell pwd)/ --plugin cpp --cpp-dir=$(shell pwd)/ --plugin http --http=127.0.0.1:3032 --http-modifier1=250
+	$(UWSGI) --plugin-dir=$(shell pwd)/ --plugin cpp --cpp-dir=$(shell pwd)/ --plugin http --http=127.0.0.1:3032 --http-modifier1=250 --workers=2 --http-websockets
 	

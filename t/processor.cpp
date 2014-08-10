@@ -18,6 +18,7 @@ public:
 
     int request_handler( Request& req, Response& res ) 
     {
+        res << "TEST\n";
         return res.done().ok();
     }
 };
@@ -68,6 +69,7 @@ TEST_F(ProcessorTest, simpleRequest) {
     
     EXPECT_EQ(0,result);    
     EXPECT_EQ(true,res.isDone());
+    EXPECT_EQ("TEST\n",wsgi_body_spy);    
     EXPECT_EQ("200 OK",wsgi_status_spy);
 }
 
