@@ -35,6 +35,8 @@ public:
     
     void reset();
     
+    Curl( const Curl& rhs ) = delete;
+    Curl& operator=(const Curl& rhs) = delete;
 private:
 
     static int callback(char *data, size_t size, size_t nmemb, Curl* that);

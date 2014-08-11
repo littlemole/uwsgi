@@ -46,6 +46,48 @@ std::string Base64::decode(const char* s)
 
 std::string Base64::encode(const std::string& s, bool singleline)
 {
+    BIO *b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+
+    BIO *mem = BIO_new(BIO_s_mem()); 
+    BIO_push(b64, mem);
+    
+    bool done = false;
+    int res = 0;
+    while(!done)
+    {
+        res = BIO_write(b64, s.c_str(), s.size());
+
+        if(res <= 0) // if failed
+        {
+            if(BIO_should_retry(b64))
+            {
+                continue;
+            }
+            else // encoding failed
+            {
+                return "";
+            }
+        }
+        else // success!
+        {
+            done = true;
+        }
+    }
+
+    BIO_flush(b64);
+
+    // get a pointer to mem's data
+    unsigned char* output;
+    int len = BIO_get_mem_data(mem, &output);
+
+    // assign data to output
+    std::string result((char*)output, len);
+    BIO_free(mem);
+    BIO_free(b64);
+    return result;    
+
+/*
     const char* message = s.c_str();
     char* buffer = 0;
     
@@ -67,6 +109,7 @@ std::string Base64::encode(const std::string& s, bool singleline)
     std::string result(buffer,encodedSize);
     free(buffer);
     return result;
+    */
 }
 
 std::string Base64::encode(const char* s, size_t len, bool singleline)

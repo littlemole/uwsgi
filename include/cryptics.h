@@ -3,6 +3,8 @@
 #include "common.h"
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/pem.h>
+#include <openssl/err.h>
 
 std::string nonce (int n);
 
@@ -20,6 +22,8 @@ public:
     std::string hex(const std::string& input);
     std::string base64(const std::string& input);
     
+    Digest(const Digest& d) = delete;
+    Digest& operator=(const Digest& rhs) = delete;
 private:
     EVP_MD_CTX* mdctx_;
     const EVP_MD* md_;
@@ -39,6 +43,9 @@ public:
 
     std::string encrypt(const std::string& input);    
     
+    Encrypt(const Encrypt& d) = delete;
+    Encrypt& operator=(const Encrypt& rhs) = delete;
+    
 private:
     const EVP_CIPHER* cipher_;
     EVP_CIPHER_CTX ctx_;
@@ -55,6 +62,9 @@ public:
 
     std::string decrypt (const std::string& raw);
 
+    Decrypt(const Decrypt& d) = delete;
+    Decrypt& operator=(const Decrypt& rhs) = delete;
+
 private:
     const EVP_CIPHER* cipher_;
     EVP_CIPHER_CTX ctx_;
@@ -70,10 +80,69 @@ public:
     
     std::string hash(const std::string& msg);
     
+    Hmac(const Hmac& d) = delete;
+    Hmac& operator=(const Hmac& rhs) = delete;
+
 private:
     const EVP_MD* md_;
     std::string key_;
     HMAC_CTX ctx_;
+};
+
+class PrivateKey
+{
+public:
+    PrivateKey();
+    PrivateKey(const std::string& file);
+    
+    ~PrivateKey();
+    
+    operator EVP_PKEY* ()
+    {
+        return pkey_;
+    }
+
+    PrivateKey(const PrivateKey& d) = delete;
+    PrivateKey& operator=(const PrivateKey& rhs) = delete;
+
+private:
+    EVP_PKEY* pkey_;
+};
+
+class PublicKey
+{
+public:
+    PublicKey();
+    PublicKey(const std::string& file);
+    ~PublicKey();
+    
+    operator EVP_PKEY* ()
+    {
+        return pkey_;
+    }
+    
+    PublicKey(const PublicKey& d) = delete;
+    PublicKey& operator=(const PublicKey& rhs) = delete;    
+
+private:
+    EVP_PKEY* pkey_;    
+};
+
+class Signature
+{
+public:
+    Signature(const EVP_MD* md,EVP_PKEY* key);
+
+    std::string sign(const std::string& msg);    
+    bool verify(const std::string& msg,const std::string& sig);
+
+    Signature(const Signature& d) = delete;
+    Signature& operator=(const Signature& rhs) = delete;
+
+private:
+    const EVP_MD* md_;
+    EVP_PKEY* pkey_;
+    EVP_MD_CTX ctx_;
 };
 
 

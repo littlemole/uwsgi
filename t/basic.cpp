@@ -6,95 +6,17 @@
 #include "base64.h"
 #include "cryptics.h"
 
+ 
 // uwsgi mocks
 
-std::map<std::string,std::string> wsgi_mock;
-std::string wsgi_body_mock;
+extern std::map<std::string,std::string> wsgi_env_mock;
+extern std::string wsgi_body_mock;
 
 // uwsgi spies
 
-std::string wsgi_status_spy;
-headers_t wsgi_headers_spy;
-std::string wsgi_body_spy;
-
-extern "C" {
-
-void uwsgi_log(const char* c, ...)
-{
-}
-
-int uwsgi_parse_vars(wsgi_request* r)
-{
-    return 0;
-}
-
-char* uwsgi_request_body_read( wsgi_request* r, ssize_t s,ssize_t* len)
-{
-    *len = wsgi_body_mock.size();
-    return (char*)wsgi_body_mock.c_str();
-}
-
-char* uwsgi_get_var(wsgi_request* r, char * s, uint16_t size,uint16_t* len)
-{
-    *len = 0;
-    std::string key(s,size);
-
-    if ( wsgi_mock.count(key) == 0 )
-    {
-        return 0;
-    }    
-    
-    const std::string& val = wsgi_mock[key];
-    *len = val.size();
-    
-    return (char*)val.c_str();
-}
-
-int uwsgi_response_prepare_headers(wsgi_request* r,char* s ,uint16_t size)
-{
-    wsgi_status_spy = std::string(s,size);
-    return 0;
-}
-
-int uwsgi_response_add_header(wsgi_request* r,char* k ,uint16_t ks,char* v ,uint16_t vs)
-{
-    std::string key = std::string(k,ks);
-    std::string val = std::string(v,vs);
-    
-    wsgi_headers_spy.push_back( header_t(key,val) );
-    return 0;
-}
-
-int uwsgi_response_write_body_do(wsgi_request* r,char* s ,size_t size)
-{
-    wsgi_body_spy.append( std::string(s,size) );
-    return 0;
-}
-
-void uwsgi_opt_set_str(char* c, char* s, void* v)
-{
-}
-
-}
-
-int uwsgi_websocket_handshake(struct wsgi_request *, char *, uint16_t, char *, uint16_t)
-{
-    return 0;
-}
-
-int uwsgi_websocket_send(struct wsgi_request *, char *, size_t)
-{
-return 0;
-}
-
-struct uwsgi_buffer *uwsgi_websocket_recv(struct wsgi_request *)
-{
-return 0;
-}
-
-void uwsgi_buffer_destroy(uwsgi_buffer* b)
-{}
-
+extern std::string wsgi_status_spy;
+extern headers_t wsgi_headers_spy;
+extern std::string wsgi_body_spy;
 
 
 namespace {
@@ -281,6 +203,26 @@ TEST_F(BasicTest, hmacSha1Test) {
     
     EXPECT_EQ(hash,hash2);
     
+}
+
+TEST_F(BasicTest, SignTest) {
+
+    OpenSSL_add_all_algorithms();
+    
+    std::string input = "a well known secret";
+    PrivateKey privateKey("pem/private.pem");
+    PublicKey publicKey("pem/public.pem");
+    
+    Signature signor( EVP_sha1(), privateKey );
+    
+    std::string sig = signor.sign(input);
+    std::cerr << toHex(sig) << std::endl;
+    
+    Signature verifier( EVP_sha1(), publicKey );
+    
+    bool verified = verifier.verify(input,sig);    
+    
+    EXPECT_EQ(true,verified);
 }
 
 }  // namespace

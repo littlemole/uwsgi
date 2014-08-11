@@ -251,3 +251,81 @@ std::string Hmac::hash(const std::string& msg)
     return result;
 }
 
+PrivateKey::PrivateKey()
+{
+    pkey_ = EVP_PKEY_new();
+}
+
+PrivateKey::PrivateKey(const std::string& file)
+{   
+    FILE* f = fopen(file.c_str(),"r");
+    if (!f) 
+    {
+        throw std::string("file not found");
+    }
+    pkey_ = PEM_read_PrivateKey(f, NULL, 0, 0);        
+    fclose(f);
+}
+
+PrivateKey::~PrivateKey()
+{
+    EVP_PKEY_free(pkey_);
+}
+
+
+PublicKey::PublicKey()
+{
+    pkey_ = EVP_PKEY_new();
+}
+
+PublicKey::PublicKey(const std::string& file)
+{ 
+    FILE* f = fopen(file.c_str(),"r");
+    if (!f) 
+    {
+        throw std::string("file not found");
+    }
+    pkey_ = PEM_read_PUBKEY(f, NULL, 0, 0);        
+    fclose(f);            
+} 
+
+PublicKey::~PublicKey()
+{
+    EVP_PKEY_free(pkey_);
+}
+
+Signature::Signature(const EVP_MD* md,EVP_PKEY* key)
+    : md_(md),pkey_(key)
+{
+    
+}
+
+std::string Signature::sign(const std::string& msg)
+{
+    EVP_SignInit(&ctx_, md_);
+    int size = EVP_PKEY_size(pkey_);
+    
+    EVP_SignUpdate(&ctx_, msg.c_str(), msg.size() );
+    
+    unsigned char* sig = new unsigned char [size];
+    unsigned int len = 0;
+    EVP_SignFinal(&ctx_,sig,&len, pkey_ );        
+    
+    std::string result((char*)sig,len);
+    
+    delete[] sig;
+    EVP_MD_CTX_cleanup(&ctx_); 
+    return result;
+}
+
+bool Signature::verify(const std::string& msg,const std::string& sig)
+{
+    int r = EVP_VerifyInit(&ctx_,md_);
+    
+    r = EVP_VerifyUpdate(&ctx_, msg.c_str(), msg.size() );
+    r = EVP_VerifyFinal( &ctx_,(unsigned char *)sig.c_str(), (unsigned int) sig.size(),pkey_);
+    
+    EVP_MD_CTX_cleanup(&ctx_); 
+    return r == 1;
+}    
+

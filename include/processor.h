@@ -48,6 +48,8 @@ public:
 
     int request_handler( Request& req, Response& res );
 
+    Processor(const Processor& rhs) = delete;
+    Processor& operator=(const Processor& rhs) = delete;
 private:
 
     int intercept( Request& req, Response& res );

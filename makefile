@@ -160,7 +160,7 @@ test: $(BIN)
 #################################################
 
 verify: $(BIN)
-	$(VAL)  $(BIN)
+	$(VAL) --leak-check=full --show-leak-kinds=all $(BIN)
 
 debug: $(BIN)
 	$(VAL) --leak-check=full --show-leak-kinds=all  $(UWSGI) --plugin cpp --cpp-dir=$(shell pwd)/ --plugin http --http=127.0.0.1:3032 --http-modifier1=250

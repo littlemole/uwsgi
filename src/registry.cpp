@@ -5,18 +5,6 @@
 #include "processor.h"
 #include "response.h"
 
-//extern "C" {
-
-//    struct uwsgi_cpp 
-//    {
-//        char *modules_dir;
-//    };  
-
-//    extern struct uwsgi_server uwsgi;
-  //  extern struct uwsgi_cpp ucpp;
-    
-//}
-
 typedef int (*handler_t)(Processor* proc);
 
 

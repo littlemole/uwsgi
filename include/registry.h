@@ -1,7 +1,6 @@
 #ifndef DEFINE_MOL_UWSGI_REGISTRY_DEFINE_
 #define DEFINE_MOL_UWSGI_REGISTRY_DEFINE_
 
-//#include "response.h"
 #include "common.h"
 
 extern "C" {
@@ -15,16 +14,16 @@ extern "C" {
     
 }
 
-//class Processor;
-
 class Registry
 {
 public:
-
+    Registry() {};
     ~Registry();
 
     int load();
 
+    Registry(const Registry& rhs) = delete;
+    Registry& operator=(const Registry& rhs) = delete;
 private:
     std::vector<size_t*> modules_;
 };

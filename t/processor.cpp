@@ -3,7 +3,7 @@
 #include "processor.h"
 #include "gtest/gtest.h"
 
-extern std::map<std::string,std::string> wsgi_mock;
+extern std::map<std::string,std::string> wsgi_env_mock;
 extern std::string wsgi_body_mock;
 
 extern std::string wsgi_status_spy;
@@ -53,10 +53,10 @@ class ProcessorTest : public ::testing::Test {
 
 TEST_F(ProcessorTest, simpleRequest) {
 
-    wsgi_mock.clear();
-    wsgi_mock["REQUEST_METHOD"] = "GET";
-    wsgi_mock["PATH_INFO"] = "/test";
-    wsgi_mock["QUERY_STRING"] = "a=b&c=d";    
+    wsgi_env_mock.clear();
+    wsgi_env_mock["REQUEST_METHOD"] = "GET";
+    wsgi_env_mock["PATH_INFO"] = "/test";
+    wsgi_env_mock["QUERY_STRING"] = "a=b&c=d";    
 
     wsgi_request r;
     
@@ -75,10 +75,10 @@ TEST_F(ProcessorTest, simpleRequest) {
 
 TEST_F(ProcessorTest, simpleInterceptorRequest) {
 
-    wsgi_mock.clear();
-    wsgi_mock["REQUEST_METHOD"] = "GET";
-    wsgi_mock["PATH_INFO"] = "/test/admin";
-    wsgi_mock["QUERY_STRING"] = "a=b&c=d";    
+    wsgi_env_mock.clear();
+    wsgi_env_mock["REQUEST_METHOD"] = "GET";
+    wsgi_env_mock["PATH_INFO"] = "/test/admin";
+    wsgi_env_mock["QUERY_STRING"] = "a=b&c=d";    
 
     wsgi_request r;
     
