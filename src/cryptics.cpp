@@ -139,8 +139,32 @@ std::string nonce (int n)
 }
 
 
-Encrypt::Encrypt( const std::string& key, const std::string& iv)
-    : cipher_( EVP_bf_cbc() ), iv_(iv), key_(key)
+SymCrypt::SymCrypt( const EVP_CIPHER* cipher, const std::string& key, const std::string& iv)
+    : cipher_( cipher ), iv_(iv), key_(key)
+{
+}
+
+SymCrypt::SymCrypt( const EVP_CIPHER* cipher, const std::string& key)
+    : cipher_( cipher ), iv_(""), key_(key)
+{
+    int s = EVP_CIPHER_iv_length(cipher_);
+    if ( s )
+    {
+        iv_ = nonce(s);
+    }
+}
+
+SymCrypt::~SymCrypt()
+{
+}
+
+std::string SymCrypt::iv()
+{
+    return iv_;
+}
+
+
+std::string SymCrypt::encrypt(const std::string& input)
 {
     EVP_CIPHER_CTX_init(&ctx_);
     EVP_EncryptInit(
@@ -149,15 +173,7 @@ Encrypt::Encrypt( const std::string& key, const std::string& iv)
         (unsigned char*)key_.c_str(), 
         (unsigned char*)iv_.c_str() 
     );
-}
-
-Encrypt::~Encrypt()
-{
-    EVP_CIPHER_CTX_cleanup(&ctx_);
-}
-
-std::string Encrypt::encrypt(const std::string& input)
-{
+    
     int n = EVP_CIPHER_block_size(cipher_)+input.size()-1;
     unsigned char* outbuf = new unsigned char[n+1];
     
@@ -174,12 +190,11 @@ std::string Encrypt::encrypt(const std::string& input)
     n+=tlen;
     std::string result( (char*)outbuf, n );
     delete[] outbuf;
+    EVP_CIPHER_CTX_cleanup(&ctx_);    
     return result;
 }
 
-
-Decrypt::Decrypt( const std::string& key, const std::string& iv )
-    : cipher_( EVP_bf_cbc() ), iv_(iv), key_(key)
+std::string SymCrypt::decrypt (const std::string& raw)
 {
     EVP_CIPHER_CTX_init(&ctx_);
     EVP_DecryptInit(
@@ -188,14 +203,6 @@ Decrypt::Decrypt( const std::string& key, const std::string& iv )
         (unsigned char*)key_.c_str(), 
         (unsigned char*)iv_.c_str() 
     );
-}
-
-Decrypt::~Decrypt()
-{
-    EVP_CIPHER_CTX_cleanup(&ctx_);
-}
-std::string Decrypt::decrypt (const std::string& raw)
-{
     int n = EVP_CIPHER_block_size(cipher_)+raw.size();
     unsigned char* outbuf = new unsigned char[n+1];
 
@@ -213,9 +220,9 @@ std::string Decrypt::decrypt (const std::string& raw)
     
     std::string result( (char*)outbuf, n );
     delete[] outbuf;
+    EVP_CIPHER_CTX_cleanup(&ctx_);    
     return result;        
 }
-
 
 Hmac::Hmac(const EVP_MD* md, const std::string& key)
     : md_(md), key_(key)
@@ -266,6 +273,7 @@ PrivateKey::PrivateKey(const std::string& file)
     pkey_ = PEM_read_PrivateKey(f, NULL, 0, 0);        
     fclose(f);
 }
+    std::string iv();
 
 PrivateKey::~PrivateKey()
 {
@@ -328,4 +336,90 @@ bool Signature::verify(const std::string& msg,const std::string& sig)
     EVP_MD_CTX_cleanup(&ctx_); 
     return r == 1;
 }    
+
+
+Envelope::Envelope(const EVP_CIPHER* cipher)
+    : cipher_(cipher)
+{}
+
+Envelope::Envelope(const EVP_CIPHER* cipher, const std::string& key, const std::string& iv)
+    : cipher_(cipher)
+{
+    ekl_ = key.size();
+    key_ = (unsigned char*) malloc(ekl_);
+    memcpy( key_, key.c_str(), ekl_ );
+        
+    iv_  = (unsigned char*) malloc(iv.size());
+    memcpy( iv_, iv.c_str(), iv.size() );
+}
+
+Envelope::~Envelope()
+{
+    free(key_);                  
+    free(iv_);
+}
+
+std::string Envelope::key()
+{
+    return std::string( (char*)key_, ekl_ );
+}
+
+std::string Envelope::iv()
+{
+    return std::string( (char*)iv_, EVP_CIPHER_iv_length(cipher_) );
+}
+
+std::string Envelope::seal(EVP_PKEY* pubkey, const std::string& msg)
+{
+    key_ = (unsigned char *)malloc( EVP_PKEY_size(pubkey)  );
+    iv_  = (unsigned char *)malloc(EVP_CIPHER_iv_length(cipher_));        
+    ekl_ = 1;
+    
+    EVP_SealInit(&ctx_, cipher_, &key_, &ekl_, iv_, &pubkey, 1);
+              
+    int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
+    unsigned char* outbuf = new unsigned char[n+1];
+                  
+    if(EVP_SealUpdate (&ctx_, outbuf, &n, (unsigned char*)msg.c_str(), msg.size() ) != 1)
+    {
+        return "";
+    }
+
+    int tlen=0;
+    if (EVP_SealFinal (&ctx_, outbuf + n, &tlen) != 1)
+    {
+        return "";
+    }                  
+    n+=tlen;
+    std::string result( (char*)outbuf, n );
+    delete[] outbuf;
+    EVP_CIPHER_CTX_cleanup(&ctx_);    
+    return result;        
+}
+
+std::string Envelope::open(EVP_PKEY* privkey, const std::string & msg)
+{
+    EVP_OpenInit(&ctx_, cipher_, key_, ekl_, iv_, privkey);
+              
+    int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
+    unsigned char* outbuf = new unsigned char[n+1];
+                  
+    if(EVP_OpenUpdate (&ctx_, outbuf, &n, (unsigned char*)msg.c_str(), msg.size() ) != 1)
+    {
+        return "";
+    }
+
+    int tlen=0;
+    if (EVP_OpenFinal (&ctx_, outbuf + n, &tlen) != 1)
+    {
+        return "";
+    }                  
+    n+=tlen;
+    std::string result( (char*)outbuf, n );
+    delete[] outbuf;
+    EVP_CIPHER_CTX_cleanup(&ctx_);    
+    return result;            
+}
+
+
 

@@ -151,21 +151,38 @@ TEST_F(BasicTest, bfTest) {
 
     std::string input = "a well known secret";
     std::string key   = "the secret secret key";
-    std::string iv    = nonce(8);
     
-    Encrypt encrypt(key,iv);
+    SymCrypt encrypt(EVP_bf_cbc(), key);
     std::string cipher = encrypt.encrypt(input);
     
     std::cerr << toHex(cipher) << std::endl;
-    std::cerr << toHex(iv) << std::endl;
+    std::cerr << toHex(encrypt.iv()) << std::endl;
 
-    Decrypt decrypt(key,iv);
+    SymCrypt decrypt(EVP_bf_cbc(), key, encrypt.iv());
     std::string plain = decrypt.decrypt(cipher);
 
     EXPECT_EQ(input,plain);
     
 }
 
+
+
+TEST_F(BasicTest, rc4Test) {
+
+    std::string input = "a well known secret";
+    std::string key   = "the secret secret key";
+    
+    SymCrypt encrypt(EVP_rc4(),key);
+    std::string cipher = encrypt.encrypt(input);
+    
+    std::cerr << toHex(cipher) << std::endl;
+
+    SymCrypt decrypt(EVP_rc4(), key);
+    std::string plain = decrypt.decrypt(cipher);
+
+    EXPECT_EQ(input,plain);
+    
+}
 
 TEST_F(BasicTest, hmacMD5Test) {
 
@@ -223,6 +240,57 @@ TEST_F(BasicTest, SignTest) {
     bool verified = verifier.verify(input,sig);    
     
     EXPECT_EQ(true,verified);
+}
+
+
+TEST_F(BasicTest, EvelopeTest) {
+
+    std::string input = "a well known secret";
+    PrivateKey privateKey("pem/private.pem");
+    PublicKey publicKey("pem/public.pem");
+    
+    Envelope sealer(EVP_bf_cbc() );
+    
+    std::string sealed = sealer.seal(publicKey,input);
+    
+    std::cerr << toHex(sealer.key()) << std::endl;
+    std::cerr << toHex(sealer.iv()) << std::endl;
+    std::cerr << toHex(sealed) << std::endl;
+    
+    Envelope opener( EVP_bf_cbc(), sealer.key(), sealer.iv() );
+    std::string plain = sealer.open(privateKey,sealed);
+        
+    EXPECT_EQ(input,plain);
+}
+
+
+TEST_F(BasicTest, EvelopeTest2) {
+
+    std::string input = "a well known secret";
+    PrivateKey privateKey("pem/private.pem");
+    PublicKey publicKey("pem/public.pem");
+    
+    Envelope sealer(EVP_rc4() );
+    
+    std::string sealed = sealer.seal(publicKey,input);
+    
+    std::cerr << toHex(sealer.key()) << std::endl;
+    std::cerr << toHex(sealer.iv()) << std::endl;
+    std::cerr << toHex(sealed) << std::endl;
+    
+    Envelope opener( EVP_rc4(), sealer.key(), sealer.iv() );
+    std::string plain = sealer.open(privateKey,sealed);
+        
+    EXPECT_EQ(input,plain);
+}
+
+TEST_F(BasicTest, PrintIVsize) {
+
+    std::cerr << "des-cbc " << EVP_CIPHER_iv_length(EVP_des_cbc()) << std::endl;
+    std::cerr << "bf-cbc " << EVP_CIPHER_iv_length(EVP_bf_cbc()) << std::endl;
+    std::cerr << "des_ede3_cbc " << EVP_CIPHER_iv_length(EVP_des_ede3_cbc()) << std::endl;
+    std::cerr << "aes-256-cbc " << EVP_CIPHER_iv_length(EVP_aes_256_cbc()) << std::endl;
+    std::cerr << "rc4 " << EVP_CIPHER_iv_length(EVP_rc4()) << std::endl;
 }
 
 }  // namespace

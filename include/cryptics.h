@@ -34,17 +34,20 @@ std::string sha1( const std::string& s);
 std::string sha256( const std::string& s);
 
 
-class Encrypt
+class SymCrypt
 {
 public:
-
-    Encrypt( const std::string& key, const std::string& iv);
-    ~Encrypt();
+    SymCrypt( const EVP_CIPHER* cipher, const std::string& key);
+    SymCrypt( const EVP_CIPHER* cipher, const std::string& key, const std::string& iv);
+    ~SymCrypt();
 
     std::string encrypt(const std::string& input);    
+    std::string decrypt (const std::string& raw);
     
-    Encrypt(const Encrypt& d) = delete;
-    Encrypt& operator=(const Encrypt& rhs) = delete;
+    std::string iv();
+    
+    SymCrypt(const SymCrypt& d) = delete;
+    SymCrypt& operator=(const SymCrypt& rhs) = delete;
     
 private:
     const EVP_CIPHER* cipher_;
@@ -53,23 +56,29 @@ private:
     std::string key_;
 };
 
-class Decrypt
+class Envelope
 {
 public:
+    Envelope(const EVP_CIPHER* cipher);
+    Envelope(const EVP_CIPHER* cipher, const std::string& key, const std::string& iv);    
+    ~Envelope();
+    
+    std::string key();
+    std::string iv();
 
-    Decrypt( const std::string& key, const std::string& iv );
-    ~Decrypt();
+    std::string seal(EVP_PKEY* pubkey, const std::string& msg);
+    std::string open(EVP_PKEY* privkey, const std::string & msg);
 
-    std::string decrypt (const std::string& raw);
-
-    Decrypt(const Decrypt& d) = delete;
-    Decrypt& operator=(const Decrypt& rhs) = delete;
-
+    Envelope(const Envelope& d) = delete;
+    Envelope& operator=(const Envelope& rhs) = delete;
+    
 private:
-    const EVP_CIPHER* cipher_;
+    const EVP_CIPHER* cipher_;    
     EVP_CIPHER_CTX ctx_;
-    std::string iv_;
-    std::string key_;
+    
+    unsigned char* key_;    
+    int            ekl_;
+    unsigned char* iv_;    
 };
 
 class Hmac
