@@ -110,6 +110,9 @@ public:
     {
         return pkey_;
     }
+    
+    std::string toDER();
+    void fromDER(int type, const std::string& s);
 
     PrivateKey(const PrivateKey& d) = delete;
     PrivateKey& operator=(const PrivateKey& rhs) = delete;
@@ -129,6 +132,9 @@ public:
     {
         return pkey_;
     }
+    
+    std::string toDER();
+    void fromDER(int type, const std::string& s);
     
     PublicKey(const PublicKey& d) = delete;
     PublicKey& operator=(const PublicKey& rhs) = delete;    

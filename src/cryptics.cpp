@@ -15,7 +15,6 @@ std::string toHex(const std::string& input)
     for(int i = 0; i < length; i++){
         buffer[i*2] = nibble_decode(bytes[i] >> 4);
         buffer[i*2+1] = nibble_decode(bytes[i] & 0x0f);
-       // buffer[i*3+2] = ' ';
     }
     buffer[length*2] = '\0';
     std::string result(buffer,length*2);
@@ -273,11 +272,29 @@ PrivateKey::PrivateKey(const std::string& file)
     pkey_ = PEM_read_PrivateKey(f, NULL, 0, 0);        
     fclose(f);
 }
-    std::string iv();
 
 PrivateKey::~PrivateKey()
 {
     EVP_PKEY_free(pkey_);
+}
+
+std::string PrivateKey::toDER()
+{
+    int len = i2d_PrivateKey(pkey_, NULL);
+    unsigned char* buf = new unsigned char[len];
+
+    unsigned char* p = buf;
+    
+    int r = i2d_PrivateKey(pkey_, &p);
+    std::string result( (char*) buf, len );
+    delete[] buf;
+    return result;   
+}
+
+void PrivateKey::fromDER(int type, const std::string& k)
+{
+    const unsigned char* s = (const unsigned char*) k.c_str();
+    pkey_ = d2i_PrivateKey(type,&pkey_, (const unsigned char **)&s, k.size() );
 }
 
 
@@ -301,6 +318,26 @@ PublicKey::~PublicKey()
 {
     EVP_PKEY_free(pkey_);
 }
+
+std::string PublicKey::toDER()
+{
+    int len = i2d_PUBKEY(pkey_, NULL);
+    unsigned char* buf = new unsigned char[len];
+
+    unsigned char* p = buf;
+    
+    int r = i2d_PUBKEY(pkey_, &p);
+    std::string result( (char*) buf, r );
+    delete[] buf;
+    return result;
+}
+
+void PublicKey::fromDER(int type, const std::string& k)
+{
+    const unsigned char* s = (const unsigned char*) k.c_str();
+    d2i_PUBKEY(&pkey_, (const unsigned char **)&s, k.size() );
+}
+
 
 Signature::Signature(const EVP_MD* md,EVP_PKEY* key)
     : md_(md),pkey_(key)

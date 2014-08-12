@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <fstream>
 #include "base64.h"
 #include "cryptics.h"
 
@@ -291,6 +292,41 @@ TEST_F(BasicTest, PrintIVsize) {
     std::cerr << "des_ede3_cbc " << EVP_CIPHER_iv_length(EVP_des_ede3_cbc()) << std::endl;
     std::cerr << "aes-256-cbc " << EVP_CIPHER_iv_length(EVP_aes_256_cbc()) << std::endl;
     std::cerr << "rc4 " << EVP_CIPHER_iv_length(EVP_rc4()) << std::endl;
+}
+
+TEST_F(BasicTest, DERTest) {
+
+    std::string input = "a well known secret";
+    PrivateKey privateKey("pem/private.pem");
+    PublicKey publicKey("pem/public.pem");
+    
+    Signature signor( EVP_sha1(), privateKey );
+    
+    std::string sig = signor.sign(input);
+    std::cerr << toHex(sig) << std::endl;
+    
+    std::string der = publicKey.toDER();
+    std::cerr << toHex(der) << std::endl;
+    
+    std::ofstream ofs;
+    ofs.open("pem/public.der");
+    ofs.write(der.c_str(),der.size());
+    ofs.close();
+    
+    std::string d = privateKey.toDER();
+    std::ofstream ofs2;
+    ofs2.open("pem/private.der");
+    ofs2.write(d.c_str(),d.size());
+    ofs2.close();    
+    
+    PublicKey pk;
+    pk.fromDER(EVP_PKEY_RSA,der);
+    
+    Signature verifier( EVP_sha1(), pk );
+    
+    bool verified = verifier.verify(input,sig);    
+    
+    EXPECT_EQ(true,verified);
 }
 
 }  // namespace

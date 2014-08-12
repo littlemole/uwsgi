@@ -20,7 +20,7 @@ int calcDecodeLength(const char* b64input)
 }
 
 std::string Base64::decode(const std::string& s)
-{
+{                               
     int decodeLen = calcDecodeLength(s.c_str());
     char* buffer = (char*)malloc(decodeLen+1);
     FILE* stream = fmemopen((char*)s.c_str(), s.size(), "r");
