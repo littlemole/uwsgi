@@ -6,6 +6,7 @@ class Processor;
 class Request;
 class Response;
 
+
 class HttpHandler
 {
 public:
@@ -17,6 +18,9 @@ public:
     virtual int request_handler( Request& req, Response& res )  = 0;
     
 }; 
+
+extern HttpHandler* processor();
+
 
 class HttpInterceptor : public HttpHandler
 {

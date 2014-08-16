@@ -1,5 +1,5 @@
 #include "common.h"
-
+#include "uwsgi.h"
  
 // uwsgi mocks
 

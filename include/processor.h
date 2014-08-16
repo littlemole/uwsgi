@@ -59,7 +59,7 @@ private:
 };
 
 
-HttpHandler* processor();
+//HttpHandler* processor();
 
 
  

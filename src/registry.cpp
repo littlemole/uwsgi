@@ -4,6 +4,7 @@
 #include <stdio.h> 
 #include "processor.h"
 #include "response.h"
+#include "uwsgi.h"
 
 typedef int (*handler_t)(Processor* proc);
 

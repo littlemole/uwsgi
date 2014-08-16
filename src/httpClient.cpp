@@ -155,7 +155,7 @@ void Curl::init()
     curl_ = curl_easy_init();
     if(!curl_) 
     {
-        throw new CurlEx();
+        throw CurlEx();
     }
 }
 

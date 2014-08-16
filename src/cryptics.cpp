@@ -1,41 +1,15 @@
 #include "cryptics.h"
 #include "base64.h"
-
-template<class T>
-class Buffer
-{
-public:
-
-    Buffer(size_t s)
-        : buf_(s,0)
-    {}
-    
-    T* operator&()
-    {
-        return &(buf_[0]);
-    }
-    
-    T& operator[](size_t i)
-    {
-        return buf_[i];
-    }
-    
-    std::string toString()
-    {
-        return std::string( (char*)&(buf_[0]), buf_.size()*sizeof(T) );
-    }
-    
-private:
-    std::vector<T> buf_;
-
-};
-
-typedef Buffer<unsigned char> uchar_buf;
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static const char nibble_decode(char nibble)
 {
-    const char byte_map[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    const char byte_map[] = { 
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+        'a', 'b', 'c', 'd', 'e', 'f' 
+    };
     return byte_map[(int)nibble];
 }
 
@@ -110,8 +84,8 @@ Digest::~Digest()
 std::string Digest::digest(const std::string& input)
 {
      unsigned char md_value[EVP_MAX_MD_SIZE];
-     unsigned int md_len = 0;;         
-
+     unsigned int md_len = 0;     
+     
      EVP_DigestInit_ex(mdctx_, md_, NULL);
      EVP_DigestUpdate(mdctx_, input.c_str(), input.size());
      EVP_DigestFinal_ex(mdctx_, md_value, &md_len);
@@ -160,7 +134,7 @@ std::string nonce (int n)
 	if ((read (fd, &key, n)) == -1)
 		perror ("read key error");
 
-    return key.toString();
+    return key.toString(n);
 }
 
 
@@ -199,11 +173,15 @@ std::string SymCrypt::encrypt(const std::string& input)
         (unsigned char*)iv_.c_str() 
     );
     
-    int n = EVP_CIPHER_block_size(cipher_)+input.size()-1;
+    int n = EVP_CIPHER_block_size(cipher_)+input.size();
     
-    uchar_buf outbuf(n+1);
+    uchar_buf outbuf(n);
     
-    if(EVP_EncryptUpdate (&ctx_,&outbuf, &n, (unsigned char*)input.c_str(), input.size() ) != 1)
+    if ( EVP_EncryptUpdate(
+        &ctx_,
+        &outbuf, &n, 
+        (unsigned char*)input.c_str(), input.size() 
+        ) != 1)
     {
         return "";
     }
@@ -232,7 +210,11 @@ std::string SymCrypt::decrypt (const std::string& raw)
     int n = EVP_CIPHER_block_size(cipher_)+raw.size();
     uchar_buf outbuf(n+1);
 
-    if (EVP_DecryptUpdate (&ctx_, &outbuf, &n, (const unsigned char*)raw.c_str(), raw.size()) != 1)
+    if (EVP_DecryptUpdate(
+        &ctx_, 
+        &outbuf, &n, 
+        (const unsigned char*)raw.c_str(), raw.size()
+       ) != 1 )
     {
         return "";
     }
@@ -266,7 +248,10 @@ std::string Hmac::hash(const std::string& msg)
 
     uchar_buf buffer(len);
 
-    if( HMAC_Update(&ctx_, (const unsigned char *) msg.c_str(), msg.size()) != 1)
+    if ( HMAC_Update(
+        &ctx_, 
+        (const unsigned char *) msg.c_str(), msg.size()
+       ) != 1)
     {
         return "";
     }
@@ -276,7 +261,7 @@ std::string Hmac::hash(const std::string& msg)
         return "";
     }
     
-    return buffer.toString();
+    return buffer.toString(len);
 }
 
 PrivateKey::PrivateKey()
@@ -308,13 +293,13 @@ std::string PrivateKey::toDER()
     unsigned char* p = &buf;
     i2d_PrivateKey(pkey_, &p);
     
-    return buf.toString();
+    return buf.toString(len);
 }
 
 void PrivateKey::fromDER(int type, const std::string& k)
 {
     const unsigned char* s = (const unsigned char*) k.c_str();
-    pkey_ = d2i_PrivateKey(type,&pkey_, (const unsigned char **)&s, k.size() );
+    pkey_ = d2i_PrivateKey(type,&pkey_, &s, k.size() );
 }
 
 
@@ -347,13 +332,13 @@ std::string PublicKey::toDER()
     unsigned char* p = &buf;    
     i2d_PUBKEY(pkey_, &p);
     
-    return buf.toString();
+    return buf.toString(len);
 }
 
 void PublicKey::fromDER(int type, const std::string& k)
 {
     const unsigned char* s = (const unsigned char*) k.c_str();
-    d2i_PUBKEY(&pkey_, (const unsigned char **)&s, k.size() );
+    d2i_PUBKEY(&pkey_, &s, k.size() );
 }
 
 
@@ -375,7 +360,7 @@ std::string Signature::sign(const std::string& msg)
     EVP_SignFinal(&ctx_,&sig,&len, pkey_ );        
     
     EVP_MD_CTX_cleanup(&ctx_); 
-    return sig.toString();
+    return sig.toString(len);
 }
 
 bool Signature::verify(const std::string& msg,const std::string& sig)
@@ -383,7 +368,12 @@ bool Signature::verify(const std::string& msg,const std::string& sig)
     int r = EVP_VerifyInit(&ctx_,md_);
     
     r = EVP_VerifyUpdate(&ctx_, msg.c_str(), msg.size() );
-    r = EVP_VerifyFinal( &ctx_,(unsigned char *)sig.c_str(), (unsigned int) sig.size(),pkey_);
+    r = EVP_VerifyFinal( 
+        &ctx_,
+        (unsigned char *)sig.c_str(), 
+        (unsigned int) sig.size(),
+        pkey_
+    );
     
     EVP_MD_CTX_cleanup(&ctx_); 
     return r == 1;
@@ -432,7 +422,11 @@ std::string Envelope::seal(EVP_PKEY* key, const std::string& msg)
     int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
     uchar_buf outbuf(n+1);
                   
-    if(EVP_SealUpdate (&ctx_, &outbuf, &n, (unsigned char*)msg.c_str(), msg.size() ) != 1)
+    if ( EVP_SealUpdate(
+        &ctx_, 
+        &outbuf, &n, 
+        (unsigned char*)msg.c_str(), msg.size() 
+       ) != 1)
     {
         return "";
     }
@@ -455,7 +449,11 @@ std::string Envelope::open(EVP_PKEY* key, const std::string & msg)
     int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
     uchar_buf outbuf(n+1);
                   
-    if(EVP_OpenUpdate (&ctx_, &outbuf, &n, (unsigned char*)msg.c_str(), msg.size() ) != 1)
+    if ( EVP_OpenUpdate(
+        &ctx_, 
+        &outbuf, &n, 
+        (unsigned char*)msg.c_str(), msg.size() 
+       ) != 1)
     {
         return "";
     }
@@ -469,6 +467,85 @@ std::string Envelope::open(EVP_PKEY* key, const std::string & msg)
 
     EVP_CIPHER_CTX_cleanup(&ctx_);    
     return std::string( (char*)&outbuf, n  );
+}
+
+DiffieHellman::DiffieHellman() 
+    : dh_(0)
+{
+}
+
+DiffieHellman::DiffieHellman( const std::string& params)
+    : dh_(0)
+{
+    const unsigned char* c = (const unsigned char *)params.c_str();
+    d2i_DHparams(&dh_, &c, params.size());    
+}
+
+void DiffieHellman::load(const std::string& file)
+{
+    FILE* fp = 0;
+    fp = fopen( file.c_str(), "r");
+    if ( fp )
+    {
+        PEM_read_DHparams(fp, &dh_, NULL, NULL);        
+        fclose(fp);
+    }
+}
+
+void DiffieHellman::write(const std::string& file)
+{
+    FILE* fp = 0;
+    fp = fopen( file.c_str(), "w");
+    if ( fp )
+    {
+        PEM_write_DHparams(fp, dh_);
+        fclose(fp);
+    } 
+}
+
+std::string DiffieHellman::initialize(size_t s) 
+{
+    std::cerr << "DiffieHellman generate" << std::endl;
+    dh_ = DH_generate_parameters(s, 5, NULL, NULL);
+    std::cerr << "DiffieHellman generate done" << std::endl;        
+    
+    int len = i2d_DHparams(dh_, NULL);
+    uchar_buf buf(len);
+    unsigned char* c = &buf;
+    i2d_DHparams(dh_, &c);
+    return buf.toString(len);
+}    
+
+DiffieHellman::~DiffieHellman() 
+{
+    DH_free(dh_ );
+}
+    
+
+bool DiffieHellman::generate()
+{
+    int r = DH_generate_key(dh_); 
+    return r == 1;
+}
+
+std::string DiffieHellman::compute(const std::string& pubKey )
+{
+    BIGNUM* bn = 0;
+    int r = BN_hex2bn( &bn, pubKey.c_str() );
+    int size = DH_size(dh_);
+        
+    uchar_buf buf(size);
+    r = DH_compute_key( &buf, bn, dh_);
+    BN_free(bn);
+    return buf.toString(r);
+}
+
+std::string DiffieHellman::pubKey()
+{
+    char* c = BN_bn2hex(dh_->pub_key);
+    std::string result(c);
+    OPENSSL_free(c);
+    return result;
 }
 
 

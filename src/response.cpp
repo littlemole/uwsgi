@@ -1,5 +1,6 @@
 #include "response.h"
 #include <sstream>
+#include "uwsgi.h"
 
 Response::Response(wsgi_request* r)
     : r_(r), done_(false)

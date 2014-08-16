@@ -1,6 +1,6 @@
 
 #include "registry.h"
-
+#include "uwsgi.h"
 
 struct uwsgi_cpp  ucpp;  
     

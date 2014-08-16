@@ -5,11 +5,50 @@
 #include <openssl/hmac.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/bn.h>
 
 std::string nonce (int n);
 
 std::string toHex(const std::string& input);
 std::string fromHex(const std::string& hex);
+
+template<class T>
+class Buffer
+{
+public:
+
+    Buffer(size_t s)
+        : buf_(s,0)
+    {}
+    
+    T* operator&()
+    {
+        return &(buf_[0]);
+    }
+    
+    T& operator[](size_t i)
+    {
+        return buf_[i];
+    }
+    
+    std::string toString()
+    {
+        return std::string( (char*)&(buf_[0]), buf_.size()*sizeof(T) );
+    }
+    
+    
+    std::string toString(size_t n)
+    {
+        return std::string( (char*)&(buf_[0]), n*sizeof(T) );
+    }    
+    
+private:
+    std::vector<T> buf_;
+
+};
+
+typedef Buffer<unsigned char> uchar_buf;
+
 
 class Digest
 {
@@ -42,7 +81,7 @@ public:
     ~SymCrypt();
 
     std::string encrypt(const std::string& input);    
-    std::string decrypt (const std::string& raw);
+    std::string decrypt(const std::string& raw);
     
     std::string iv();
     
@@ -160,6 +199,25 @@ private:
     EVP_MD_CTX ctx_;
 };
 
+class DiffieHellman
+{
+public:
+    DiffieHellman();
+    DiffieHellman(const std::string& params);
+    ~DiffieHellman();
+    
+    void load(const std::string& fp);
+    void write(const std::string& fp);
+
+    std::string initialize(size_t s);        
+    bool generate();
+    
+    std::string compute(const std::string& pubKey );
+    std::string pubKey();
+
+private:
+    DH* dh_;
+};
 
 #endif
 

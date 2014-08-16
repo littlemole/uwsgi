@@ -2,7 +2,7 @@
 #include "processor.h"
 #include <iostream>
 #include <memory>
-
+#include "uwsgi.h"
     
 HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
 {

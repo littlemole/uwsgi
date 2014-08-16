@@ -1,6 +1,7 @@
 #include "request.h"
 #include "processor.h"
 #include "gtest/gtest.h"
+#include "uwsgi.h"
 
 extern std::map<std::string,std::string> wsgi_env_mock;
 extern std::string wsgi_body_mock;

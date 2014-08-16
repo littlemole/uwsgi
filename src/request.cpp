@@ -1,5 +1,5 @@
 #include "request.h"
-
+#include "uwsgi.h"
 
 Request::Request(wsgi_request* r)
     : r_(r)

@@ -329,6 +329,74 @@ TEST_F(BasicTest, DERTest) {
     EXPECT_EQ(true,verified);
 }
 
+TEST_F(BasicTest, DER2Test) {
+
+    std::string input = "a well known secret";
+    PrivateKey privateKey("pem/private.pem");
+    PublicKey publicKey("pem/public.pem");
+    
+    std::string der = privateKey.toDER();
+    PrivateKey pk;
+    pk.fromDER(EVP_PKEY_RSA,der);
+    
+    Signature signor( EVP_sha1(), pk );
+    
+    std::string sig = signor.sign(input);
+    std::cerr << toHex(sig) << std::endl;
+     
+    Signature verifier( EVP_sha1(), publicKey );
+    
+    bool verified = verifier.verify(input,sig);    
+    
+    EXPECT_EQ(true,verified);
+}
+
+
+TEST_F(BasicTest, dhTest) {
+
+    DiffieHellman dh1;
+    std::string dhp = dh1.initialize(128);
+
+    std::cerr << dh1.generate() << std::endl;
+    std::cerr << dh1.pubKey() << std::endl;
+
+    DiffieHellman dh2(dhp);
+    
+    std::cerr << dh2.generate() << std::endl;   
+    std::cerr << dh2.pubKey() << std::endl;
+
+    std::string secret1 = dh2.compute(dh1.pubKey());
+    std::cerr << toHex(secret1) << std::endl;
+    
+    std::string secret2 = dh1.compute(dh2.pubKey());
+    std::cerr << toHex(secret2) << std::endl;
+    
+    EXPECT_EQ(secret1,secret2);
+}
+
+TEST_F(BasicTest, dhTest2) {
+
+    DiffieHellman dh1;
+    dh1.load("pem/dh.pem");
+
+    std::cerr << dh1.generate() << std::endl;
+    std::cerr << dh1.pubKey() << std::endl;
+
+    DiffieHellman dh2;
+    dh2.load("pem/dh.pem");
+    
+    std::cerr << dh2.generate() << std::endl;   
+    std::cerr << dh2.pubKey() << std::endl;
+
+    std::string secret1 = dh2.compute(dh1.pubKey());
+    std::cerr << toHex(secret1) << std::endl;
+    
+    std::string secret2 = dh1.compute(dh2.pubKey());
+    std::cerr << toHex(secret2) << std::endl;
+    
+    EXPECT_EQ(secret1,secret2);
+}
+
 }  // namespace
 
 
