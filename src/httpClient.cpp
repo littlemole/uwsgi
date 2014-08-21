@@ -1,5 +1,8 @@
 #include "httpClient.h"
 
+namespace mol {
+namespace whiskey {
+
 
 Curl::Curl()
     : curl_(NULL), headers_(NULL)
@@ -182,5 +185,8 @@ size_t Curl::rcvHeaders(void *buffer, size_t size, size_t nmemb, void *userp)
     
     return len;      
 }
+
+} // end namespace whiskey
+} // end namespace mol
 
 

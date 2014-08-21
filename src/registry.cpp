@@ -1,10 +1,13 @@
-
 #include "registry.h"
 #include <dirent.h> 
 #include <stdio.h> 
 #include "processor.h"
 #include "response.h"
 #include "uwsgi.h"
+
+namespace mol {
+namespace whiskey {
+
 
 typedef int (*handler_t)(Processor* proc);
 
@@ -64,5 +67,8 @@ int uwsgiProcessor::process(wsgi_request *wsgi_req)
     HttpHandler* proc = processor();
     return proc->request_handler(req,res);
 }
+
+} // end namespace whiskey
+} // end namespace mol
 
 

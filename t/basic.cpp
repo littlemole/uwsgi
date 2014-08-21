@@ -6,7 +6,9 @@
 #include <fstream>
 #include "base64.h"
 #include "cryptics.h"
+#include "json.h"
 
+using namespace mol::whiskey;
  
 // uwsgi mocks
 
@@ -22,6 +24,15 @@ extern std::string wsgi_body_spy;
 
 namespace {
 
+class Tester
+{
+public:
+    std::string keyA;
+    std::string keyB;
+    int         keyC;
+    
+    std::vector<std::string> list;
+}; 
 
 class BasicTest : public ::testing::Test {
  protected:
@@ -32,6 +43,8 @@ class BasicTest : public ::testing::Test {
 
   virtual void TearDown() {
   }
+  
+ 
    
 }; // end test setup
 
@@ -64,6 +77,22 @@ TEST_F(BasicTest, Base64decodeTest) {
     
 }
 
+TEST_F(BasicTest, Base64UrlTest) {
+
+    std::string input = "/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/";
+    std::string b64 = Base64Url::encode(input);
+    EXPECT_EQ("L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwL2JsYS9ibHViL3d1cHAv",b64);
+    
+}
+
+
+TEST_F(BasicTest, Base64UrldecodeTest) {
+
+    std::string input = "L2JsYS9ibHViL3d1cHAvYmxhL2JsdWIvd3VwcC9ibGEvYmx1Yi93dXBwLw==";
+    std::string plain = Base64Url::decode(input);
+    EXPECT_EQ("/bla/blub/wupp/bla/blub/wupp/bla/blub/wupp/",plain);
+    
+}
 
 TEST_F(BasicTest, MD5Test) {
 
@@ -395,6 +424,24 @@ TEST_F(BasicTest, dhTest2) {
     std::cerr << toHex(secret2) << std::endl;
     
     EXPECT_EQ(secret1,secret2);
+}
+
+TEST_F(BasicTest, jsonTest) {
+
+    Json::Value result(Json::objectValue);
+    result["key"] = "value";
+    
+    std::string response = JSON::stringify( result );    
+    EXPECT_EQ("{\n   \"key\" : \"value\"\n}\n",response);
+}
+
+TEST_F(BasicTest, jsonParseTest) {
+
+    std::string body = "{\n   \"key\" : \"value\"\n}\n";
+    
+    Json::Value json = JSON::parse( body );
+    std::string value = json["key"].asString();
+    EXPECT_EQ("value",value);
 }
 
 }  // namespace

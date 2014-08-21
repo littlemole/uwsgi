@@ -1,14 +1,19 @@
 #include "request.h"
 #include "uwsgi.h"
 
+namespace mol {
+namespace whiskey {
+
+
 Request::Request(wsgi_request* r)
     : r_(r)
-{}
-
-std::vector<Cookie> Request::cookies()
 {
-    std::vector<Cookie> v = Cookie::parse( get("HTTP_COOKIE") );
-    return v;
+    cookies_.parse( get("HTTP_COOKIE") );
+}
+
+Cookies& Request::cookies()
+{
+    return cookies_;
 }
 
 
@@ -81,11 +86,11 @@ std::string Request::get(const std::string& key)
     return std::string(p,len);    
 }
     
-void Request::attr( const std::string& key, boost::any& a ) {
+void Request::setAttr( const std::string& key,const boost::any& a ) {
     attrs_.insert( std::make_pair( key, a ) );
 }
 
-boost::any Request::attr( const std::string& key ) {
+boost::any Request::getAttr( const std::string& key ) {
     if ( attrs_.count(key) == 0 ) {
         return boost::any(nullptr);
     }
@@ -122,14 +127,11 @@ void Request::ws_handshake()
 {
     std::string ws_key = get("HTTP_SEC_WEBSOCKET_KEY");
     std::string ws_origin = get("HTTP_ORIGIN");
-//    std::string ws_proto = "websocket_handshake";
-    
-    //int ret = 
+
     uwsgi_websocket_handshake(
                 r_, 
                 (char*)ws_key.c_str(), ws_key.size(), 
                 (char*)ws_origin.c_str(), ws_origin.size() 
-//                (char*)ws_proto.c_str(), ws_proto.size()
     );   
 }
 
@@ -146,3 +148,7 @@ std::string Request::ws_recv()
     uwsgi_buffer_destroy(ub);
     return result;
 }
+
+} // end namespace whiskey
+} // end namespace mol
+

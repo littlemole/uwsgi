@@ -1,6 +1,7 @@
 #include "handler.h"
 #include "response.h"
 
+using namespace mol::whiskey;
 
 class Handler : public HttpHandler
 {
@@ -28,7 +29,7 @@ public:
         res.body("\r\n");   
         
         
-        for ( Cookie c : req.cookies() )
+        for ( Cookie c : req.cookies().all() )
         {
             res.body("got cookie: ");
             res.body(c.name());

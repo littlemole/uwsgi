@@ -1,6 +1,8 @@
 #include "handler.h"
 #include "response.h"
 
+using namespace mol::whiskey;
+
 #define PASTE2(x,y) x##y
 #define PASTE(x,y) PASTE2(x,y)
 #define GET static auto PASTE(handler,__LINE__) = Get

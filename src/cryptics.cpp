@@ -4,6 +4,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+namespace mol {
+namespace whiskey {
+
+
 static const char nibble_decode(char nibble)
 {
     const char byte_map[] = { 
@@ -38,7 +42,7 @@ static int HexCharToInt(char ch)
     else if (ch >= 'A' && ch <= 'F')
         return (ch-'A'+10);
     else
-        throw std::invalid_argument("Not a valid hex digit.");
+        throw CryptoEx();
 }
 
 
@@ -67,13 +71,29 @@ std::string fromHex(const std::string& hex)
 Digest::Digest(const std::string& md)
 {
     md_ = EVP_get_digestbyname(md.c_str());
+    if(!md_)
+    {
+        throw CryptoEx();
+    }
     mdctx_ = EVP_MD_CTX_create();        
+    if(!mdctx_)
+    {
+        throw CryptoEx();
+    }    
 }
 
 Digest::Digest(const EVP_MD * md)
 {
     md_ = md;
+    if(!md_)
+    {
+        throw CryptoEx();
+    }    
     mdctx_ = EVP_MD_CTX_create();    
+    if(!mdctx_)
+    {
+        throw CryptoEx();
+    }     
 }
 
 Digest::~Digest()
@@ -86,10 +106,19 @@ std::string Digest::digest(const std::string& input)
      unsigned char md_value[EVP_MAX_MD_SIZE];
      unsigned int md_len = 0;     
      
-     EVP_DigestInit_ex(mdctx_, md_, NULL);
-     EVP_DigestUpdate(mdctx_, input.c_str(), input.size());
-     EVP_DigestFinal_ex(mdctx_, md_value, &md_len);
-     
+     if(!EVP_DigestInit_ex(mdctx_, md_, NULL))
+     {
+         throw CryptoEx();
+     }       
+     if(!EVP_DigestUpdate(mdctx_, input.c_str(), input.size()))
+     {
+         throw CryptoEx();
+     }      
+     if(!EVP_DigestFinal_ex(mdctx_, md_value, &md_len))
+     {
+         throw CryptoEx();
+     }   
+        
      return std::string( (char*) md_value, md_len );
 }
 
@@ -129,10 +158,14 @@ std::string nonce (int n)
 	int fd;
 
 	if ((fd = open ("/dev/random", O_RDONLY)) == -1)
-		perror ("open error");
+    {
+        throw CryptoEx();
+    } 
 
 	if ((read (fd, &key, n)) == -1)
-		perror ("read key error");
+    {
+        throw CryptoEx();
+    } 
 
     return key.toString(n);
 }
@@ -166,12 +199,15 @@ std::string SymCrypt::iv()
 std::string SymCrypt::encrypt(const std::string& input)
 {
     EVP_CIPHER_CTX_init(&ctx_);
-    EVP_EncryptInit(
+    if(!EVP_EncryptInit(
         &ctx_, 
         cipher_, 
         (unsigned char*)key_.c_str(), 
         (unsigned char*)iv_.c_str() 
-    );
+    ))
+    {
+        throw CryptoEx();
+    }
     
     int n = EVP_CIPHER_block_size(cipher_)+input.size();
     
@@ -183,13 +219,13 @@ std::string SymCrypt::encrypt(const std::string& input)
         (unsigned char*)input.c_str(), input.size() 
         ) != 1)
     {
-        return "";
+        throw CryptoEx();
     }
 
     int tlen=0;
     if (EVP_EncryptFinal (&ctx_, (&outbuf) + n, &tlen) != 1)
     {
-        return "";
+        throw CryptoEx();
     }
     n+=tlen;
 
@@ -200,12 +236,15 @@ std::string SymCrypt::encrypt(const std::string& input)
 std::string SymCrypt::decrypt (const std::string& raw)
 {
     EVP_CIPHER_CTX_init(&ctx_);
-    EVP_DecryptInit(
+    if(!EVP_DecryptInit(
         &ctx_, 
         cipher_, 
         (unsigned char*)key_.c_str(), 
         (unsigned char*)iv_.c_str() 
-    );
+    ))
+    {
+        throw CryptoEx();
+    }
     
     int n = EVP_CIPHER_block_size(cipher_)+raw.size();
     uchar_buf outbuf(n+1);
@@ -216,13 +255,13 @@ std::string SymCrypt::decrypt (const std::string& raw)
         (const unsigned char*)raw.c_str(), raw.size()
        ) != 1 )
     {
-        return "";
+        throw CryptoEx();
     }
 
     int tlen = 0;
     if (EVP_DecryptFinal (&ctx_, &outbuf + n, &tlen) != 1)
     {
-        return "";
+        throw CryptoEx();
     }
     n += tlen;
     
@@ -234,7 +273,10 @@ Hmac::Hmac(const EVP_MD* md, const std::string& key)
     : md_(md), key_(key)
 {
     HMAC_CTX_init(&ctx_);
-    HMAC_Init(&ctx_, key.c_str(), key.size(), md_ );
+    if(!HMAC_Init(&ctx_, key.c_str(), key.size(), md_ ))
+    {
+        throw CryptoEx();
+    }
 }
 
 Hmac::~Hmac()
@@ -253,12 +295,12 @@ std::string Hmac::hash(const std::string& msg)
         (const unsigned char *) msg.c_str(), msg.size()
        ) != 1)
     {
-        return "";
+        throw CryptoEx();
     }
     
     if( HMAC_Final(&ctx_, &buffer, &len) != 1)
     {
-        return "";
+        throw CryptoEx();
     }
     
     return buffer.toString(len);
@@ -274,7 +316,7 @@ PrivateKey::PrivateKey(const std::string& file)
     FILE* f = fopen(file.c_str(),"r");
     if (!f) 
     {
-        throw std::string("file not found");
+        throw CryptoEx();
     }
     pkey_ = PEM_read_PrivateKey(f, NULL, 0, 0);        
     fclose(f);
@@ -313,7 +355,7 @@ PublicKey::PublicKey(const std::string& file)
     FILE* f = fopen(file.c_str(),"r");
     if (!f) 
     {
-        throw std::string("file not found");
+         throw CryptoEx();
     }
     pkey_ = PEM_read_PUBKEY(f, NULL, 0, 0);        
     fclose(f);            
@@ -353,11 +395,17 @@ std::string Signature::sign(const std::string& msg)
     EVP_SignInit(&ctx_, md_);
     int size = EVP_PKEY_size(pkey_);
     
-    EVP_SignUpdate(&ctx_, msg.c_str(), msg.size() );
+    if(!EVP_SignUpdate(&ctx_, msg.c_str(), msg.size() ))
+    {
+        throw CryptoEx();    
+    }
     
     uchar_buf sig(size);
     unsigned int len = 0;
-    EVP_SignFinal(&ctx_,&sig,&len, pkey_ );        
+    if(!EVP_SignFinal(&ctx_,&sig,&len, pkey_ ))
+    {
+        throw CryptoEx();    
+    }
     
     EVP_MD_CTX_cleanup(&ctx_); 
     return sig.toString(len);
@@ -368,12 +416,20 @@ bool Signature::verify(const std::string& msg,const std::string& sig)
     int r = EVP_VerifyInit(&ctx_,md_);
     
     r = EVP_VerifyUpdate(&ctx_, msg.c_str(), msg.size() );
+    if(!r)
+    {
+        throw CryptoEx();    
+    }    
     r = EVP_VerifyFinal( 
         &ctx_,
         (unsigned char *)sig.c_str(), 
         (unsigned int) sig.size(),
         pkey_
     );
+    if(!r)
+    {
+        throw CryptoEx();    
+    }    
     
     EVP_MD_CTX_cleanup(&ctx_); 
     return r == 1;
@@ -417,7 +473,10 @@ std::string Envelope::seal(EVP_PKEY* key, const std::string& msg)
     iv_  = (unsigned char *)malloc(EVP_CIPHER_iv_length(cipher_));        
     ekl_ = 1;
     
-    EVP_SealInit(&ctx_, cipher_, &key_, &ekl_, iv_, &key, 1);
+    if(!EVP_SealInit(&ctx_, cipher_, &key_, &ekl_, iv_, &key, 1))
+    {
+        throw CryptoEx();    
+    }    
               
     int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
     uchar_buf outbuf(n+1);
@@ -428,13 +487,13 @@ std::string Envelope::seal(EVP_PKEY* key, const std::string& msg)
         (unsigned char*)msg.c_str(), msg.size() 
        ) != 1)
     {
-        return "";
+        throw CryptoEx();    
     }
 
     int tlen=0;
     if (EVP_SealFinal (&ctx_, &outbuf + n, &tlen) != 1)
     {
-        return "";
+        throw CryptoEx();    
     }                  
     n+=tlen;
 
@@ -444,7 +503,10 @@ std::string Envelope::seal(EVP_PKEY* key, const std::string& msg)
 
 std::string Envelope::open(EVP_PKEY* key, const std::string & msg)
 {
-    EVP_OpenInit(&ctx_, cipher_, key_, ekl_, iv_, key);
+    if(!EVP_OpenInit(&ctx_, cipher_, key_, ekl_, iv_, key))
+    {
+        throw CryptoEx();    
+    }    
               
     int n = EVP_CIPHER_block_size(cipher_)+msg.size()-1;
     uchar_buf outbuf(n+1);
@@ -455,13 +517,13 @@ std::string Envelope::open(EVP_PKEY* key, const std::string & msg)
         (unsigned char*)msg.c_str(), msg.size() 
        ) != 1)
     {
-        return "";
+        throw CryptoEx();    
     }
 
     int tlen=0;
     if (EVP_OpenFinal (&ctx_, &outbuf + n, &tlen) != 1)
     {
-        return "";
+        throw CryptoEx();    
     }                  
     n+=tlen;
 
@@ -485,22 +547,26 @@ void DiffieHellman::load(const std::string& file)
 {
     FILE* fp = 0;
     fp = fopen( file.c_str(), "r");
-    if ( fp )
+    if ( !fp )
     {
-        PEM_read_DHparams(fp, &dh_, NULL, NULL);        
-        fclose(fp);
+        throw CryptoEx();    
     }
+
+    PEM_read_DHparams(fp, &dh_, NULL, NULL);        
+    fclose(fp);
 }
 
 void DiffieHellman::write(const std::string& file)
 {
     FILE* fp = 0;
     fp = fopen( file.c_str(), "w");
-    if ( fp )
+    if ( !fp )
     {
-        PEM_write_DHparams(fp, dh_);
-        fclose(fp);
-    } 
+        throw CryptoEx();    
+    }
+
+    PEM_write_DHparams(fp, dh_);
+    fclose(fp);
 }
 
 std::string DiffieHellman::initialize(size_t s) 
@@ -548,5 +614,7 @@ std::string DiffieHellman::pubKey()
     return result;
 }
 
+} // end namespace whiskey
+} // end namespace mol
 
 

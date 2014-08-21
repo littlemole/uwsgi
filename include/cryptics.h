@@ -7,48 +7,15 @@
 #include <openssl/err.h>
 #include <openssl/bn.h>
 
+namespace mol {
+namespace whiskey {
+
 std::string nonce (int n);
 
 std::string toHex(const std::string& input);
 std::string fromHex(const std::string& hex);
 
-template<class T>
-class Buffer
-{
-public:
-
-    Buffer(size_t s)
-        : buf_(s,0)
-    {}
-    
-    T* operator&()
-    {
-        return &(buf_[0]);
-    }
-    
-    T& operator[](size_t i)
-    {
-        return buf_[i];
-    }
-    
-    std::string toString()
-    {
-        return std::string( (char*)&(buf_[0]), buf_.size()*sizeof(T) );
-    }
-    
-    
-    std::string toString(size_t n)
-    {
-        return std::string( (char*)&(buf_[0]), n*sizeof(T) );
-    }    
-    
-private:
-    std::vector<T> buf_;
-
-};
-
-typedef Buffer<unsigned char> uchar_buf;
-
+class CryptoEx {};
 
 class Digest
 {
@@ -218,6 +185,10 @@ public:
 private:
     DH* dh_;
 };
+
+
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

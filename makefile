@@ -22,8 +22,11 @@ release : override DEBUG = -O3
 # include and dependency information
 #################################################
 
+JSONCPP = $(shell pkg-config --cflags jsoncpp)
+JSONCPPLIBS = $(shell pkg-config --libs jsoncpp)
+
 # includes
-INCLUDE = -I./include
+INCLUDE = -I./include $(JSONCPP)
 
 #options
 OPTIONS = -std=c++11 -fpic -Wno-write-strings -pthread 
@@ -33,7 +36,7 @@ CPPFLAGS = -Wall $(DEBUG) $(REENTRANT) $(INCLUDE) $(OPTIONS)
 TESTFLAGS = -g
 
 # library flags
-DEPS = -lpthread -lcurl -lboost_regex -lb64
+DEPS = -lpthread -lcurl -lboost_regex -lb64 $(JSONCPPLIBS)
 LIBS =  $(DEPS) -shared 
 TEST_LIBS = -lgtest $(DEPS) -ldl -lssl -lcrypto
 

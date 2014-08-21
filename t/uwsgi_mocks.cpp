@@ -9,7 +9,7 @@ std::string wsgi_body_mock;
 // uwsgi spies
 
 std::string wsgi_status_spy;
-headers_t wsgi_headers_spy;
+mol::whiskey::headers_t wsgi_headers_spy;
 std::string wsgi_body_spy;
 
 
@@ -60,7 +60,7 @@ int uwsgi_response_add_header(wsgi_request* r,char* k ,uint16_t ks,char* v ,uint
     std::string key = std::string(k,ks);
     std::string val = std::string(v,vs);
     
-    wsgi_headers_spy.push_back( header_t(key,val) );
+    wsgi_headers_spy.push_back( mol::whiskey::header_t(key,val) );
     return 0;
 }
 

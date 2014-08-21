@@ -1,6 +1,10 @@
 #include "queryparams.h"
 #include "urlencode.h"
 
+namespace mol {
+namespace whiskey {
+
+
 QueryParams::QueryParams(const std::string& s)
 {
     std::vector<std::string> v = split(s,'&');
@@ -27,4 +31,6 @@ std::string QueryParams::get(const std::string& key)
     return params_[key];
 }
 
+} // end namespace whiskey
+} // end namespace mol
 

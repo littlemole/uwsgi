@@ -4,6 +4,9 @@
 #include <openssl/evp.h>
 #include <string.h>
 #include <stdio.h>
+
+namespace mol {
+namespace whiskey {
  
 //Calculates the length of a decoded base64 string
 int calcDecodeLength(const char* b64input) 
@@ -19,24 +22,33 @@ int calcDecodeLength(const char* b64input)
     return (int)len*0.75 - padding;
 }
 
-std::string Base64::decode(const std::string& s)
-{                               
+std::string Base64::decode(const std::string& input)
+{
+    std::string s = input;           
+    
+    size_t missing_padding = s.size() % 3;
+    if ( missing_padding != 0)
+    {
+        missing_padding = 3 - missing_padding;
+    }
+    for ( size_t i = 0; i < missing_padding; i++) {
+        s += "=";
+    }
+                
     int decodeLen = calcDecodeLength(s.c_str());
-    char* buffer = (char*)malloc(decodeLen+1);
+                      
+    char_buf buffer(decodeLen+1);
     FILE* stream = fmemopen((char*)s.c_str(), s.size(), "r");
      
     BIO* b64 = BIO_new(BIO_f_base64());
     BIO* bio = BIO_new_fp(stream, BIO_NOCLOSE);
     bio = BIO_push(b64, bio);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); 
-    int len = BIO_read(bio, buffer, s.size());
-    buffer[len] = '\0';
+    int len = BIO_read(bio, &buffer, s.size());
      
     BIO_free_all(bio);
     fclose(stream);
-    std::string result(buffer,len);
-    free(buffer);
-    return result;
+    return buffer.toString(len);
 }
 
 std::string Base64::decode(const char* s)
@@ -58,18 +70,18 @@ std::string Base64::encode(const std::string& s, bool singleline)
     {
         res = BIO_write(b64, s.c_str(), s.size());
 
-        if(res <= 0) // if failed
+        if(res <= 0) 
         {
             if(BIO_should_retry(b64))
             {
                 continue;
             }
-            else // encoding failed
+            else
             {
-                return "";
+                throw Base64ex();
             }
         }
-        else // success!
+        else
         {
             done = true;
         }
@@ -77,97 +89,93 @@ std::string Base64::encode(const std::string& s, bool singleline)
 
     BIO_flush(b64);
 
-    // get a pointer to mem's data
     unsigned char* output;
     int len = BIO_get_mem_data(mem, &output);
 
-    // assign data to output
     std::string result((char*)output, len);
     BIO_free(mem);
     BIO_free(b64);
     return result;    
-
-/*
-    const char* message = s.c_str();
-    char* buffer = 0;
-    
-    BIO *bio, *b64;
-    FILE* stream;
-    int encodedSize = 4*ceil((double)strlen(message)/3);
-    buffer = (char *)malloc(encodedSize+1);
-     
-    stream = fmemopen(buffer, encodedSize+1, "w");
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new_fp(stream, BIO_NOCLOSE);
-    bio = BIO_push(b64, bio);
-    if (singleline)
-        BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); 
-    BIO_write(bio, message, strlen(message));
-    BIO_flush(bio);
-    BIO_free_all(bio);
-    fclose(stream);
-    std::string result(buffer,encodedSize);
-    free(buffer);
-    return result;
-    */
 }
 
 std::string Base64::encode(const char* s, size_t len, bool singleline)
 {
-    return encode( std::string(s,len),singleline );
-}    
-
-/*
-std::string Base64::decode(const std::string& s)
-{
-    base64::decoder E;
-    std::istringstream iss(s);
-    std::ostringstream oss;
-    E.decode(iss,oss);
-
-    return oss.str();
+    return encode( std::string(s,len), singleline);
 }
 
-std::string Base64::decode(const char* s)
+
+std::string Base64Url::decode(const std::string& input)
+{
+    std::ostringstream oss;
+    
+    for ( size_t i = 0; i < input.size(); i++)
+    {
+        switch( input[i] )
+        {
+            case '-' : 
+            {
+                oss << '+';
+                break;
+            }
+            case '_' : 
+            {
+                oss << '/';
+                break;
+            }          
+            default : 
+            {
+                oss << input[i];
+            }
+        }
+    }
+
+    return Base64::decode(oss.str());
+}
+
+std::string Base64Url::decode(const char* s)
 {
     return decode( std::string(s) );
 }
 
-std::string Base64::encode(const std::string& s, bool singleline)
+std::string Base64Url::encode(const std::string& s)
 {
-    base64::encoder E;
-    std::istringstream iss(s);
+    std::string input = Base64::encode(s,true);
+    
     std::ostringstream oss;
-    E.encode(iss,oss);
-
-    std::string result = oss.str();    
-
-    if ( singleline )
+    for ( size_t i = 0; i < input.size(); i++)
     {
-        std::ostringstream oss;
-        for( char c : result )
+        switch( input[i] )
         {
-            if ( c != '\n' )
+            case '+' : 
             {
-                oss.write(&c,1);    
+                oss << '-';
+                break;
+            }
+            case '/' : 
+            {
+                oss << '_';
+                break;
+            }          
+            case '=' : 
+            {
+                break;
+            }                    
+            default : 
+            {
+                oss << input[i];
             }
         }
-        result = oss.str();
     }
-    else
-    {
-        if ( !result.empty() && result[result.size()-1] == '\n' )
-        {
-            result = result.substr(0,result.size()-1);
-        }    
-    }
-    return result;
+    
+    return oss.str();
 }
 
-std::string Base64::encode(const char* s, size_t len, bool singleline)
+std::string Base64Url::encode(const char* s, size_t len)
 {
-    return encode( std::string(s,len),singleline );
-}    
+    return encode( std::string(s,len));
+}
 
-*/
+
+} // end namespace whiskey
+} // end namespace mol
 

@@ -14,6 +14,9 @@ extern "C" {
     
 }
 
+namespace mol {
+namespace whiskey {
+
 class Registry
 {
 public:
@@ -37,6 +40,9 @@ public:
 
     static int process(wsgi_request *wsgi_req);
 };
+
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

@@ -4,6 +4,11 @@
 #include <memory>
 #include "uwsgi.h"
     
+    
+namespace mol {
+namespace whiskey {
+
+    
 HandlerInfo::HandlerInfo( const std::string& m,  const std::string& p, HttpHandler* handler ) 
 {
     method_ = m;
@@ -129,10 +134,10 @@ int Processor::request_handler( Request& req, Response& res )
     std::string method = req.method();
     std::string path   = req.path();
   
-    uwsgi_log("request_handler %s %s %i\n", method.c_str(), path.c_str(), handlers_.size()); 
+    //uwsgi_log("request_handler %s %s %i\n", method.c_str(), path.c_str(), handlers_.size()); 
     for ( size_t i = 0; i < handlers_.size(); i++) {
     
-        uwsgi_log("%s %s", method.c_str(), path.c_str() );
+        //uwsgi_log("%s %s", method.c_str(), path.c_str() );
         patharguments_t args;
         if ( handlers_[i].match( method, path, args) ) {
         
@@ -172,4 +177,9 @@ HttpInterceptor::HttpInterceptor(const std::string& m, const std::string& p)
     Processor* proc = (Processor*)processor();
     proc->registerInterceptor(m,p,this);             
 }
+
+} // end namespace whiskey
+} // end namespace mol
+
+
 

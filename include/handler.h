@@ -2,6 +2,9 @@
 #define _MOL_DEF_GUARD_DEFINE_MOD_HTTP_REQUEST_HANDLER_DEF_GUARD_
 #include "common.h"
 
+namespace mol {
+namespace whiskey {
+
 class Processor;
 class Request;
 class Response;
@@ -149,6 +152,8 @@ GenericInterceptor<T> interceptor(const std::string& m, const std::string& p, T 
     return GenericInterceptor<T>(m,p,t);
 }
 
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

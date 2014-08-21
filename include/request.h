@@ -6,6 +6,10 @@
 #include "arg.h"
 #include "cookie.h"
 
+namespace mol {
+namespace whiskey {
+
+
 class Request
 {
 public:
@@ -16,7 +20,7 @@ public:
     
     QueryParams queryParams();
     Args args();
-    std::vector<Cookie> cookies();
+    Cookies& cookies();
 
     std::string body();
 
@@ -30,10 +34,22 @@ public:
     
     std::string get(const std::string& key);    
     
-    void attr( const std::string& key, boost::any& a );
-    boost::any attr( const std::string& key );
+    void setAttr( const std::string& key, const boost::any& a );
+    boost::any getAttr( const std::string& key );
     bool hasAttr( const std::string& key );
     
+    template<class T>
+    void attr(const std::string& key, const T& a )
+    {
+        setAttr( key, boost::any(a) );
+    }
+    
+    template<class T>
+    T attr(const std::string& key)
+    {
+        return boost::any_cast<T>(getAttr(key));
+    }
+        
     void set_pathargs(const patharguments_t& args);
     patharguments_t path_info();
     
@@ -44,8 +60,11 @@ private:
     wsgi_request* r_; 
     std::map<std::string,boost::any> attrs_;
     patharguments_t args_;
+    Cookies cookies_;
 };
 
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

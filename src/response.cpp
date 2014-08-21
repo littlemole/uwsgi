@@ -2,6 +2,10 @@
 #include <sstream>
 #include "uwsgi.h"
 
+namespace mol {
+namespace whiskey {
+
+
 Response::Response(wsgi_request* r)
     : r_(r), done_(false)
 {}
@@ -167,5 +171,7 @@ void Response::ws_send(const std::string& s)
     uwsgi_websocket_send(r_, (char*)s.c_str(), s.size() );
 }
 
+} // end namespace whiskey
+} // end namespace mol
 
 

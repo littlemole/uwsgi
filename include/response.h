@@ -2,7 +2,8 @@
 #define _MOL_DEF_GUARD_DEFINE_MOD_HTTP_RESPONSE_DEF_GUARD_
 #include "request.h"
 
-
+namespace mol {
+namespace whiskey {
 
 class Response
 {
@@ -50,6 +51,8 @@ inline Response& operator<<(Response& lhs, const std::string& rhs)
     return lhs;
 }
 
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

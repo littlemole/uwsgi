@@ -1,5 +1,7 @@
 #include "request.h"
 
+namespace mol {
+namespace whiskey {
 
 
 Args::Args( const patharguments_t& args)
@@ -29,5 +31,6 @@ std::vector<std::string> Args::keys()
     return v;
 }    
 
-
+} // end namespace whiskey
+} // end namespace mol
 

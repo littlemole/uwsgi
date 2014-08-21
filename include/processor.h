@@ -3,6 +3,9 @@
 
 #include "handler.h"
 
+namespace mol {
+namespace whiskey {
+
 class HandlerInfo
 {
 public:
@@ -59,9 +62,8 @@ private:
 };
 
 
-//HttpHandler* processor();
-
-
+} // end namespace whiskey
+} // end namespace mol
  
 #endif
 

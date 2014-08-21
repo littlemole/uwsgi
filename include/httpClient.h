@@ -10,6 +10,9 @@
 #include <cstring>
 #include <curl/curl.h>
 
+namespace mol {
+namespace whiskey {
+
 // super simple curl exception class.
 class CurlEx {};
 
@@ -51,6 +54,9 @@ private:
     std::string m_;
     std::ostringstream oss_;
 };
+
+} // end namespace whiskey
+} // end namespace mol
 
 #endif
 

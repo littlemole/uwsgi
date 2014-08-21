@@ -2,6 +2,10 @@
 #include <iostream>
 #include <curl/curl.h>
 
+namespace mol {
+namespace whiskey {
+
+
 std::string Urlencode::decode(const std::string& s)
 {
     return decode( s.c_str(), s.size() );
@@ -30,4 +34,6 @@ std::string Urlencode::encode(const char* s, int len)
     return result;    
 }    
 
+} // end namespace whiskey
+} // end namespace mol
 

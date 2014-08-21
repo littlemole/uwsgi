@@ -12,20 +12,21 @@ struct uwsgi_option uwsgi_cpp_options[] =
 
 static int uwsgi_cpp_init()
 {
-    uwsgi_log("CPP MODULE DIR : %s\n", ucpp.modules_dir);    
-    int loader = registry().load();    
-    uwsgi_log("LOADED : %i\n", loader);    
+    // uwsgi_log("CPP MODULE DIR : %s\n", ucpp.modules_dir);    
+    
+    mol::whiskey::registry().load();    
+    
     return 0;
 }
 
 static int uwsgi_cpp_request(struct wsgi_request *wsgi_req) 
 {
-    return uwsgiProcessor::process(wsgi_req);
+    return mol::whiskey::uwsgiProcessor::process(wsgi_req);
 }
 
 static void uwsgi_cpp_after_request(struct wsgi_request *wsgi_req) 
 {
-    uwsgi_log("after request\n");
+    //uwsgi_log("after request\n");
 }
 
 

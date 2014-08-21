@@ -2,6 +2,9 @@
 #include "cookie.h"
 #include <cstring>
 
+namespace mol {
+namespace whiskey {
+
 Cookie::Cookie()
     :secure_(false)
 {}
@@ -9,6 +12,14 @@ Cookie::Cookie()
 Cookie::Cookie(const std::string& name, const std::string& value)
     : name_(name), value_(value), secure_(false)
 {}    
+
+Cookie& Cookie::maxAge(int seconds)
+{
+    std::ostringstream oss;
+    oss << seconds;
+    maxAge_ = oss.str();
+    return *this;
+}  
 
 
 Cookie& Cookie::name(const std::string& value)
@@ -47,37 +58,46 @@ Cookie& Cookie::secure()
     return *this;
 }    
 
-std::string Cookie::name()
+std::string Cookie::name() const
 {
     return name_;
 }
 
-std::string Cookie::value()
+std::string Cookie::value() const
 {
     return value_;
 }
 
-std::string Cookie::expires()
+std::string Cookie::expires() const
 {
     return expires_;
 }
 
-std::string Cookie::domain()
+
+int Cookie::maxAge() const
+{
+    std::istringstream iss(maxAge_);
+    int result = 0;
+    iss >> result;
+    return result;
+}
+
+std::string Cookie::domain() const
 {
     return domain_;
 }
 
-std::string Cookie::path()
+std::string Cookie::path() const
 {
     return path_;
 }
 
-bool Cookie::isSecure()
+bool Cookie::isSecure() const
 {
     return secure_;
 }  
 
-std::string Cookie::str()
+std::string Cookie::str() const
 {
     std::ostringstream oss;
     oss << name_ << "=" << value_;
@@ -85,6 +105,10 @@ std::string Cookie::str()
     {
         oss << ";expires=" << expires_;
     }
+    if ( !maxAge_.empty() )
+    {
+        oss << ";max-Age=" << maxAge_;
+    }    
     if ( !domain_.empty() )
     {
         oss << ";domain=" << domain_;
@@ -100,7 +124,7 @@ std::string Cookie::str()
     return oss.str();
 }
 
-Cookie Cookie::parseCookie(const std::string& txt)
+Cookie Cookies::parseCookie(const std::string& txt)
 {
     Cookie cookie;
     std::vector<std::string> v = split(txt,';');
@@ -138,7 +162,16 @@ Cookie Cookie::parseCookie(const std::string& txt)
             cookie.expires(n[1]);
             continue;
         }
-        
+               
+        if ( strcasecmp(n[0].c_str(),"max-age") == 0 )
+        {
+            std::istringstream iss(n[1]);
+            int value = 0;
+            iss >> value;
+            cookie.maxAge(value);
+            continue;
+        }
+                
         if ( strcasecmp(n[0].c_str(),"domain") == 0 )
         {
             cookie.domain(n[1]);
@@ -154,14 +187,47 @@ Cookie Cookie::parseCookie(const std::string& txt)
     return cookie;
 }    
 
-std::vector<Cookie> Cookie::parse(const std::string& txt)
+std::vector<Cookie>& Cookies::parse(const std::string& txt)
 {
-    std::vector<Cookie> result;
     std::vector<std::string> v = split(txt,' ');
     for ( size_t i = 0; i < v.size(); i++)
     {
         Cookie cookie = parseCookie(v[i]);
-        result.push_back(cookie);
+        cookies_.push_back(cookie);
     }
-    return result;
+    return cookies_;
 }
+
+
+bool Cookies::exists(const std::string& name)
+{
+    for(const Cookie& c : cookies_ ) {
+        if( c.name() == name ) {
+            return true;
+        }
+    }    
+    return false;
+}
+
+const Cookie& Cookies::get(const std::string& name)
+{
+    for(const Cookie& c : cookies_ ) {
+        if( c.name() == name ) {
+            return c;
+        }
+    }  
+    
+    static Cookie empty;
+    return empty;
+}
+
+
+std::vector<Cookie>& Cookies::all()
+{
+    return cookies_;
+}
+
+
+} // end namespace whiskey
+} // end namespace mol
+

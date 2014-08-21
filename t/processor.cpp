@@ -4,6 +4,8 @@
 #include "gtest/gtest.h"
 #include "uwsgi.h"
 
+using namespace mol::whiskey;
+
 extern std::map<std::string,std::string> wsgi_env_mock;
 extern std::string wsgi_body_mock;
 
