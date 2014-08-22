@@ -23,7 +23,7 @@ UWSGI  = $(shell which uwsgi)
 UWSGIH = include/uwsgi.h
 
 #uwsgi version
-UWSGI_VERSION = $(shell V=$( $(UWSGI) --version) && if [[ "$V" > "2.0.0" ]];then echo -DMOL_UWSGI_VERSION_2; fi) 
+UWSGI_VERSION = $(shell ./uwv.sh) 
 
 #################################################
 # include and dependency information
