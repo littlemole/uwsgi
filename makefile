@@ -23,7 +23,7 @@ UWSGI  = $(shell which uwsgi)
 UWSGIH = include/uwsgi.h
 
 #uwsgi version
-UWSGI_VERSION = $(shell ./uwv.sh) 
+UWSGI_VERSION = $(shell bash uwv.sh) 
 
 #################################################
 # include and dependency information
