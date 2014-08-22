@@ -74,7 +74,11 @@ void uwsgi_opt_set_str(char* c, char* s, void* v)
 {
 }
 
+#if !defined(MOL_UWSGI_VERSION_2)
 int uwsgi_websocket_handshake(struct wsgi_request *, char *, uint16_t, char *, uint16_t)
+#else
+int uwsgi_websocket_handshake(struct wsgi_request *, char *, uint16_t, char *, uint16_t, char*, uint16_t)
+#endif
 {
     return 0;
 }
