@@ -9,7 +9,7 @@ using namespace mol::whiskey;
 
 
 static const char* TEST_SECRET = "betterworldapps";
-
+static const char* TEST_KEY    = "worldofgoodapps";
 
 static auto start_handler = Get( "/cpp/start" )(
 [] ( Request& req, Response& res ) {
@@ -18,16 +18,19 @@ static auto start_handler = Get( "/cpp/start" )(
     JWT jwt = req.attr<JWT>("jwt");
 
     res << "JWT: " << token << "\r\n";
-    res << "header: " << JSON::stringify(jwt.header()) << "\r\n";
-    res << "claim: " << JSON::stringify(jwt.claim()) << "\r\n";
-    res << "signature: " << jwt.signature() << "\r\n";  
+    res << "header: " << JSON::stringify(jwt.header()) << "<br>\r\n";
+    res << "claim: " << JSON::stringify(jwt.claim()) << "<br>\r\n";
+    res << "signature: " << jwt.signature() << "<br>\r\n";  
+    res << "<a href='http://localhost:3032/cpp/start'>start</a>\r\n";
 
-    return res.contentType("text/plain").ok();
+    return res.contentType("text/html").ok();
 });
-
 
 static auto jwt_interceptor = interceptor( "GET", "/cpp/.*", 
 [] (Request& req, Response& res) {
+
+    static SymCrypt encrypt(EVP_bf_cbc(), TEST_KEY);
+    static SymCrypt decrypt(EVP_bf_cbc(), TEST_KEY, encrypt.iv());
 
     std::string token = req.queryParams().get("jwt");
     if ( token.empty() ) {
@@ -35,7 +38,7 @@ static auto jwt_interceptor = interceptor( "GET", "/cpp/.*",
         Cookies& cookies = req.cookies();
         if ( cookies.exists("cpp-cookie") ) {
             const Cookie& cookie = cookies.get("cpp-cookie");
-            token = cookie.value();
+            token = decrypt.decrypt(fromHex(cookie.value()));
         }
     }
 
@@ -50,7 +53,7 @@ static auto jwt_interceptor = interceptor( "GET", "/cpp/.*",
         return res.done().redirect("https://ssl-id1.de/oha7.org/auth/?app=cpp");
     }
 
-    Cookie cookie("cpp-cookie",token);
+    Cookie cookie("cpp-cookie",toHex(encrypt.encrypt(token)));
     cookie.maxAge(10);
     res.cookie(cookie);
     

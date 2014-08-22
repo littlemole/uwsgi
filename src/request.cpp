@@ -127,12 +127,24 @@ void Request::ws_handshake()
 {
     std::string ws_key = get("HTTP_SEC_WEBSOCKET_KEY");
     std::string ws_origin = get("HTTP_ORIGIN");
+    std::string ws_proto = get("websocket_handshake");
 
+#if !defined(MOL_UWSGI_VERSION_2)
     uwsgi_websocket_handshake(
                 r_, 
                 (char*)ws_key.c_str(), ws_key.size(), 
                 (char*)ws_origin.c_str(), ws_origin.size() 
     );   
+#else
+    uwsgi_websocket_handshake(
+                r_, 
+                (char*)ws_key.c_str(), ws_key.size(), 
+                (char*)ws_origin.c_str(), ws_origin.size(),
+                0,0 
+    );   
+
+#endif
+
 }
 
 std::string Request::ws_recv()
