@@ -18,6 +18,13 @@ REENTRANT = -D_REENTRANT
 
 release : override DEBUG = -O3
 
+# uwsgi header
+UWSGI  = $(shell which uwsgi)
+UWSGIH = include/uwsgi.h
+
+#uwsgi version
+UWSGI_VERSION = $(shell V=$( $(UWSGI) --version) && if [[ "$V" > "2.0.0" ]];then echo -DMOL_UWSGI_VERSION_2; fi) 
+
 #################################################
 # include and dependency information
 #################################################
@@ -26,7 +33,7 @@ JSONCPP = $(shell pkg-config --cflags jsoncpp)
 JSONCPPLIBS = $(shell pkg-config --libs jsoncpp)
 
 # includes
-INCLUDE = -I./include $(JSONCPP)
+INCLUDE = -I./include $(JSONCPP) $(UWSGI_VERSION)
 
 #options
 OPTIONS = -std=c++11 -fpic -Wno-write-strings -pthread 
@@ -44,9 +51,7 @@ TEST_LIBS = -lgtest $(DEPS) -ldl -lssl -lcrypto
 # source and build path information
 #################################################
 
-# uwsgi header
-UWSGI  = $(shell which uwsgi)
-UWSGIH = include/uwsgi.h
+
 
 # the apache uwsgi cpp plugin
 PLUGIN = ./cpp_plugin.so
