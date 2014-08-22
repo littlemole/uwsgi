@@ -43,7 +43,7 @@ CPPFLAGS = -Wall $(DEBUG) $(REENTRANT) $(INCLUDE) $(OPTIONS)
 TESTFLAGS = -g
 
 # library flags
-DEPS = -lpthread -lcurl -lboost_regex -lb64 $(JSONCPPLIBS)
+DEPS = -lpthread -lcurl -lboost_regex $(JSONCPPLIBS)
 LIBS =  $(DEPS) -shared 
 TEST_LIBS = -lgtest $(DEPS) -ldl -lssl -lcrypto
 
