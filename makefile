@@ -45,7 +45,7 @@ TEST_LIBS = -lgtest $(DEPS) -ldl -lssl -lcrypto
 #################################################
 
 # uwsgi header
-UWSGI  = /usr/bin/uwsgi
+UWSGI  = $(shell which uwsgi)
 UWSGIH = include/uwsgi.h
 
 # the apache uwsgi cpp plugin
